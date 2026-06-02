@@ -1,7 +1,19 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import logo from '../assets/logo-breezy.png'
 
 function Register() {
+    const [username, setUsername] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        console.log({ username, email, password, confirmPassword })
+        // TODO: appel API register
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
 
@@ -15,7 +27,7 @@ function Register() {
                 </div>
 
                 {/* Form */}
-                <form className="flex flex-col gap-4">
+                <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
 
                     {/* Input username */}
                     <div className="flex flex-col gap-1">
@@ -25,6 +37,8 @@ function Register() {
                         <input
                             type="text"
                             placeholder="jean_dupont"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                         />
                     </div>
@@ -37,6 +51,8 @@ function Register() {
                         <input
                             type="email"
                             placeholder="jean@exemple.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                         />
                     </div>
@@ -49,6 +65,8 @@ function Register() {
                         <input
                             type="password"
                             placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                         />
                     </div>
@@ -61,6 +79,8 @@ function Register() {
                         <input
                             type="password"
                             placeholder="••••••••"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                         />
                     </div>

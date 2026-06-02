@@ -1,7 +1,17 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import logo from '../assets/logo-breezy.png'
 
 function Login() {
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        console.log({ email, password })
+        // TODO: appel API login
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
 
@@ -15,7 +25,7 @@ function Login() {
                 </div>
 
                 {/* Form */}
-                <form className="flex flex-col gap-4">
+                <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
 
                     {/* Input email */}
                     <div className="flex flex-col gap-1">
@@ -25,6 +35,8 @@ function Login() {
                         <input
                             type="email"
                             placeholder="jean@exemple.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                         />
                     </div>
@@ -37,6 +49,8 @@ function Login() {
                         <input
                             type="password"
                             placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                         />
                     </div>
