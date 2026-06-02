@@ -1,16 +1,28 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import logo from '../assets/logo-breezy.png'
+import { useState, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import logo from '../assets/logo-breezy.png';
 
 function Login() {
+    const { login } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        console.log({ email, password })
-        // TODO: appel API login
-    }
+    const [erreur, setErreur] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setErreur('');
+
+        try {
+            await login(email, password);
+            navigate("/")
+
+        } catch (messageErreur) {
+            setErreur(messageErreur)
+        }
+    };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -24,6 +36,13 @@ function Login() {
                     <p className="text-sm text-gray-500 mt-1">Bon retour sur Breezy</p>
                 </div>
 
+                {/* Error Display */}
+                {erreur && (
+                    <div className="mb-4 p-3 bg-red-100 text-red-600 text-sm rounded-lg text-center">
+                        {erreur}
+                    </div>
+                )}
+
                 {/* Form */}
                 <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
 
@@ -34,7 +53,7 @@ function Login() {
                         </label>
                         <input
                             type="email"
-                            placeholder="jean@exemple.com"
+                            placeholder="flora@exemple.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"

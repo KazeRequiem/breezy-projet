@@ -1,27 +1,45 @@
-import { Link } from 'react-router-dom'
+import { useContext } from 'react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import logoSimpliste from '../assets/logo-simpliste-breezy.png'
-import logo from '../assets/logo-breezy.png'
 
 function Home() {
+    const { user, logout } = useContext(AuthContext);
     return (
         <div className="min-h-screen flex flex-col bg-white">
 
             {/* Navbar */}
             <header className="w-full flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <img src={logoSimpliste} alt="Breezy" className="h-32" />
-                <div className="flex gap-2">
-                    <Link
-                        to="/login"
-                        className="text-sm font-medium text-gray-600 hover:text-blue-500 px-3 py-1.5 rounded-lg transition"
-                    >
-                        Connexion
-                    </Link>
-                    <Link
-                        to="/register"
-                        className="text-sm font-semibold bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg transition"
-                    >
-                        S'inscrire
-                    </Link>
+                <div className="flex gap-2 items-center">
+                    {user ? (
+                        <>
+                            <span className="text-sm font-medium text-gray-700 mr-2">
+                                Bonjour, {user.username}
+                            </span>
+                            <button
+                                onClick={logout}
+                                className="text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-lg transition"
+                            >
+                                Déconnexion
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                to="/login"
+                                className="text-sm font-medium text-gray-600 hover:text-blue-500 px-3 py-1.5 rounded-lg transition"
+                            >
+                                Connexion
+                            </Link>
+                            <Link
+                                to="/register"
+                                className="text-sm font-semibold bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg transition"
+                            >
+                                S'inscrire
+                            </Link>
+                        </>
+                    )}
                 </div>
             </header>
 
@@ -33,12 +51,14 @@ function Home() {
                 <p className="text-gray-500 text-base sm:text-lg max-w-sm">
                     Connecte-toi avec tes amis, partage des moments, profite de l'essentiel.
                 </p>
-                <Link
-                    to="/register"
-                    className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm sm:text-base"
-                >
-                    Commencer gratuitement
-                </Link>
+                {!user && (
+                    <Link
+                        to="/register"
+                        className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm sm:text-base"
+                    >
+                        Commencer gratuitement
+                    </Link>
+                )}
             </main>
 
             {/* Features */}
