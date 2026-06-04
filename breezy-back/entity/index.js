@@ -7,7 +7,7 @@ const sequelize = new Sequelize(
     {
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
-        dialect: "postgre",
+        dialect: "postgres",
         logging: false,
     }
 );
@@ -24,8 +24,50 @@ db.Tag = require("./tag")(sequelize);
 db.Categorize = require("./categorize")(sequelize);
 
 // Database Associations
-// ###TO FINISH### I'm fed up to finish them now, it's just boring screw it 
 
 db.User.hasMany(db.Message, { foreignKey: "id_user" });
 db.Message.belongsTo(db.User, { foreignKey: "id_user" });
+
+db.User.belongsToMany(db.User, {
+  through: db.Follow, as: "Following",
+  foreignKey: "id_user", otherKey: "id_user_follow",
+});
+db.User.belongsToMany(db.User, {
+  through: db.Follow, as: "Followers",
+  foreignKey: "id_user_follow", otherKey: "id_user",
+});
+
+db.User.belongsToMany(db.Message, {
+  through: db.Like, as: "LikedMessages",
+  foreignKey: "id_user", otherKey: "id_message",
+});
+db.Message.belongsToMany(db.User, {
+  through: db.Like, as: "LikedBy",
+  foreignKey: "id_message", otherKey: "id_user",
+});
+
+db.User.belongsToMany(db.Message, {
+  through: db.Report, as: "ReportedMessages",
+  foreignKey: "id_user", otherKey: "id_message",
+});
+db.Message.belongsToMany(db.User, {
+  through: db.Report, as: "ReportedBy",
+  foreignKey: "id_message", otherKey: "id_user",
+});
+
+db.Message.belongsToMany(db.Message, {
+  through: db.Reply, as: "Replies",
+  foreignKey: "id_message", otherKey: "id_message_reply",
+});
+
+db.Message.belongsToMany(db.Tag, {
+  through: db.Categorize,
+  foreignKey: "id_message", otherKey: "id_tag",
+});
+db.Tag.belongsToMany(db.Message, {
+  through: db.Categorize,
+  foreignKey: "id_tag", otherKey: "id_message",
+});
+
+module.exports = db;
 
