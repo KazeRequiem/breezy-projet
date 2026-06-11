@@ -94,4 +94,19 @@ describe("authController.login", () => {
         expect(payload).toHaveProperty("token");
         const decoded = jwt.verify(payload.token, "secret_de_test");
     });
+
+    test("le token contient l'id et le rôle du user", async () => {
+        const hashed = await bcrypt.hash("1234", 10);
+        db.User.findOne.mockResolvedValue({
+            id_user: 1, email: "a@b.com", password: hashed, username: "flora", role: "admin",
+        });
+        const req = { body: { email: "a@b.com", password: "1234" } };
+        const res = mockRes();
+        await authController.login(req, res);
+
+        const payload = res.json.mock.calls[0][0];
+        const decoded = jwt.verify(payload.token, "secret_de_test");
+        expect(decoded.id_user).toBe(1);
+        expect(decoded.role).toBe("admin");
+    })
 })
