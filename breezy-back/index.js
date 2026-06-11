@@ -3,14 +3,12 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 const db = require("./entity");
-const { loadSecrets } = require("./config/secrets");
 
 const app = express();
 app.use(express.json());
 
 // Doc of the swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get("/", (req, res) => res.json({ message: "Breezy API up" }));
 
 const PORT = process.env.APP_PORT || 3000;
 
