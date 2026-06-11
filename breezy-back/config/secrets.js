@@ -1,4 +1,4 @@
-const vault = require("node_vault")({
+const vault = require("node-vault")({
     endpoint: process.env.VAULT_ADDR,
     token: process.env.VAULT_TOKEN,
 });
