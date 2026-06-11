@@ -1,0 +1,260 @@
+/* Page d'accueil publique (Landing Page) */
+
+/* Wrapper plein écran */
+.wrapper {
+    position: relative;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Bulles de couleurs lumineuses en arrière-plan */
+.halo1 {
+    position: fixed;
+    width: 350px; height: 350px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.20);
+    filter: blur(60px);
+    top: -70px; right: 5%;
+    pointer-events: none;
+    animation: haloFloat 10s ease-in-out infinite alternate;
+}
+.halo2 {
+    position: fixed;
+    width: 250px; height: 250px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    filter: blur(48px);
+    bottom: 60px; left: -50px;
+    pointer-events: none;
+    animation: haloFloat 13s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes haloFloat {
+    from { transform: translate(0,0) scale(1); }
+    to   { transform: translate(20px, 16px) scale(1.09); }
+}
+
+/* Ligne de vent qui traverse l'écran de temps en temps */
+.windLine {
+    position: fixed;
+    top: 30%;
+    left: -300px;
+    width: 280px; height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.30), transparent);
+    pointer-events: none;
+    animation: windSweep 8s linear infinite;
+    animation-delay: 2s;
+}
+@keyframes windSweep {
+    from { transform: translateX(0); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    to   { transform: translateX(calc(100vw + 320px)); opacity: 0; }
+}
+
+/* Contenu centré de la page */
+.content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px 48px;
+    gap: 32px;
+    min-height: 100dvh;
+}
+
+/* Section Hero (logo + slogan) */
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    max-width: 480px;
+    width: 100%;
+}
+
+.heroLogo {
+    height: 72px;
+    width: auto;
+    filter: drop-shadow(0 6px 16px rgba(59, 140, 240, 0.30));
+    margin-bottom: 4px;
+}
+
+.heroTitle {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    /* Ombre légère pour que le texte reste lisible sur les halos */
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.5);
+}
+
+.heroTitleBrand {
+    /* Dégradé bleu-violet sur le nom de marque */
+    background: linear-gradient(135deg, #3b8cf0 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.heroSubtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 320px;
+}
+
+/* Les boutons d'appel à l'action (CTAs) */
+.ctaGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 280px;
+    margin-top: 8px;
+}
+
+/* Bouton de création de compte (effet de relief dégradé) */
+.ctaPrimary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border-radius: 16px;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.01em;
+
+    background: linear-gradient(135deg, #4fa3f7 0%, #2b72e8 100%);
+    box-shadow: 0 6px 20px rgba(43, 114, 232, 0.38);
+
+    transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+
+.ctaPrimary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(43, 114, 232, 0.45);
+}
+
+.ctaPrimary:active {
+    transform: scale(0.97);
+}
+
+/* Bouton de connexion (effet verre trempé) */
+.ctaSecondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border-radius: 16px;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+
+    background: rgba(255, 255, 255, 0.50);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.70);
+    box-shadow: 0 4px 14px rgba(120, 100, 160, 0.12);
+
+    transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.ctaSecondary:hover {
+    background: rgba(255, 255, 255, 0.70);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(120, 100, 160, 0.18);
+}
+
+.ctaSecondary:active {
+    transform: scale(0.97);
+}
+
+/* Section présentant les fonctionnalités phares */
+.features {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 480px;
+}
+
+.featureCard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px;
+    border-radius: 20px;
+
+    /* Effet verre flouté */
+    background: rgba(255, 255, 255, 0.50);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    box-shadow:
+        0 4px 20px rgba(120, 100, 160, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+    opacity: 0; /* Géré par l'animation fadeInUp au chargement */
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.featureCard:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 28px rgba(120, 100, 160, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.featureEmoji {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.featureTitle {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.featureDesc {
+    font-size: 0.825rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Grille à 3 colonnes pour les écrans larges */
+@media (min-width: 768px) {
+    .content {
+        padding: 80px 40px 60px;
+        justify-content: center;
+    }
+
+    .heroTitle {
+        font-size: 3rem;
+    }
+
+    .features {
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 700px;
+    }
+
+    .ctaGroup {
+        flex-direction: row;
+        max-width: 380px;
+    }
+
+    .ctaPrimary,
+    .ctaSecondary {
+        flex: 1;
+    }
+}
