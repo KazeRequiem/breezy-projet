@@ -1,0 +1,927 @@
+/* Carte de base avec effet verre (glassmorphism) */
+.card {
+    width: 100%;
+    padding: 16px;
+    border-radius: 20px;
+    opacity: 0; /* Géré par l'animation fadeInUp au chargement */
+
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    box-shadow:
+        0 4px 20px rgba(120, 100, 160, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+    cursor: pointer;
+}
+.card:hover {
+    transform: translate3d(0, -2px, 0);
+    box-shadow:
+        0 8px 28px rgba(120, 100, 160, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90);
+}
+
+/* Styles spécifiques pour les fils de discussion (threads) */
+.thread-root {
+    border-radius: 20px 20px 8px 8px;
+    /* On vire l'ombre du bas pour que la liaison visuelle soit parfaite */
+    box-shadow:
+        0 2px 12px rgba(120, 100, 160, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    border-bottom-color: rgba(255, 255, 255, 0.55);
+}
+.thread-root:hover {
+    transform: none; /* Pas de lift sur les posts threadés */
+}
+
+/* Réponse du milieu dans un thread : on aplatit tous les coins */
+.thread-reply {
+    border-radius: 8px;
+    box-shadow:
+        0 2px 10px rgba(120, 100, 160, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+.thread-reply:hover { transform: none; }
+
+/* Dernière réponse du thread : coins supérieurs plats, coins inférieurs arrondis */
+.thread-reply-last {
+    border-radius: 8px 8px 20px 20px;
+    box-shadow:
+        0 4px 20px rgba(120, 100, 160, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90);
+}
+.thread-reply-last:hover { transform: none; }
+
+/* En-tête de la carte (avatar, pseudo, date) */
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+.userInfo { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+
+.avatarCol {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #7ec8e3 0%, #b490ca 100%);
+    font-size: .8rem; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+}
+
+.avatarThreadLine {
+    width: 2px;
+    flex: 1;
+    min-height: 8px;
+    margin-top: 4px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to bottom,
+        rgba(120, 100, 160, 0.28),
+        rgba(120, 100, 160, 0.10)
+    );
+}
+
+/* Identifiants et métadonnées de l'utilisateur */
+.userMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
+    padding-top: 2px; /* Petit décalage pour s'aligner sur la photo */
+}
+.avatarLink {
+    text-decoration: none;
+    display: flex;
+    transition: transform 150ms ease;
+}
+.avatarLink:hover {
+    transform: scale(1.05);
+}
+
+.usernameLink {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+    min-width: 0;
+}
+.usernameLink:hover .username {
+    color: var(--brand, #3b8cf0);
+}
+
+.username {
+    font-size: .85rem; font-weight: 700; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: color 150ms ease;
+}
+.time {
+    font-size: .75rem; color: var(--text-muted);
+    white-space: nowrap; flex-shrink: 0;
+}
+
+/* Le menu d'actions (trois petits points) */
+.menuBtn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+    flex-shrink: 0;
+    transition: background 150ms ease, color 150ms ease;
+}
+.menuBtn:hover { background: rgba(120,100,160,.10); color: var(--text-primary); }
+
+/* Badge indiquant à qui on répond */
+.replyBadge {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-bottom: 8px; padding: 3px 10px; border-radius: 999px;
+    font-size: .72rem; color: var(--text-secondary);
+    background: rgba(59,140,240,.10); border: 1px solid rgba(59,140,240,.18);
+    width: fit-content;
+    /* Décalage pour aligner le texte sous le contenu, pas sous la photo */
+    margin-left: 46px;
+}
+.replyBadge strong { font-weight: 600; color: var(--brand, #3b8cf0); }
+.replyLink {
+    text-decoration: none;
+    color: inherit;
+}
+.replyLink:hover strong {
+    text-decoration: underline;
+}
+
+/* Le corps textuel du post */
+.content {
+    font-size: .9rem; line-height: 1.6;
+    color: var(--text-primary); margin-bottom: 12px; word-break: break-word;
+    /* Même décalage horizontal pour s'aligner sous le pseudo */
+    padding-left: 46px;
+}
+
+/* Les tags associés au message */
+.tagList {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 12px;
+    padding-left: 46px;
+}
+.tagPill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: .72rem; font-weight: 600;
+    color: var(--brand, #3b8cf0);
+    background: rgba(59,140,240,.09);
+    border: 1px solid rgba(59,140,240,.18);
+}
+
+/* Ligne des boutons d'action (like, reply, whisper) */
+.actions {
+    display: flex; align-items: center; gap: 2px;
+    border-top: 1px solid rgba(120,100,160,.08); padding-top: 10px;
+    /* Alignement parfait sous le texte */
+    padding-left: 46px;
+}
+
+.actionBtn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 999px;
+    border: none; background: transparent;
+    color: var(--text-muted); font-family: inherit;
+    font-size: .78rem; font-weight: 500; cursor: pointer;
+    transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+.actionBtn:hover  { background: rgba(120,100,160,.10); color: var(--text-primary); }
+.actionBtn:active { transform: scale(0.90); }
+.actionCount { font-size: .75rem; font-weight: 600; }
+
+/* Bouton spécial Whisper (message secret) */
+.whisperBtn {
+    color: var(--brand, #3b8cf0);
+    border: 1px solid rgba(59,140,240,.20);
+    background: rgba(59,140,240,.06);
+}
+.whisperBtn:hover { background: rgba(59, 140, 240, 0.14); color: var(--brand-dark, #2b6fd6); }
+.whisperLabel { font-size: .75rem; font-weight: 600; letter-spacing: .01em; }
+
+/* Version réduite pour les listes horizontales dans "Mes intérêts" */
+.compact {
+    flex: 0 0 290px;
+    max-width: 290px;
+    padding: 12px 14px;
+    cursor: default;
+}
+
+.compact:hover {
+    transform: none;
+    box-shadow:
+        0 4px 20px rgba(120, 100, 160, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90);
+}
+
+.compact .replyBadge {
+    margin-left: 0;
+    margin-bottom: 6px;
+}
+
+.compact .content {
+    padding-left: 0;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.compact .tagList {
+    padding-left: 0;
+    margin-bottom: 10px;
+    gap: 4px;
+}
+
+.compact .tagPill {
+    padding: 2px 8px;
+    font-size: 0.68rem;
+}
+
+.compact .actions {
+    padding-left: 0;
+    padding-top: 8px;
+}
+
+.compact .actionBtn {
+    padding: 4px 8px;
+}
+
+.compact .whisperLabel {
+    display: none;
+}
+
+/* Options 3 points */
+.menuContainer {
+    position: relative;
+    display: inline-flex;
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    z-index: 100;
+    min-width: 150px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(120, 100, 160, 0.12);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dropdownItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background 150ms ease, color 150ms ease;
+}
+.dropdownItem:hover {
+    background: rgba(120, 100, 160, 0.08);
+    color: var(--text-primary);
+}
+.dangerItem {
+    color: #ff4d4f;
+}
+.dangerItem:hover {
+    background: rgba(255, 77, 79, 0.1);
+    color: #ff4d4f;
+}
+
+/* Post supprimé localement */
+.deletedPost {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px dashed rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(6px);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Overlay modal Whisper */
+.whisperOverlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.whisperModal {
+    width: 100%;
+    max-width: 440px;
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 24px;
+    box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.modalTitleGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.modalTitleGroup h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+.closeModalBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 150ms ease, color 150ms ease;
+}
+.closeModalBtn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+.modalMeta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.modalMeta strong {
+    color: var(--brand);
+}
+.excerptQuote {
+    background: rgba(255, 255, 255, 0.35);
+    border-left: 3px solid rgba(59, 140, 240, 0.35);
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 6px 0 0;
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.whisperForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.whisperTextarea {
+    width: 100%;
+    min-height: 90px;
+    max-height: 150px;
+    resize: vertical;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    padding: 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: background 150ms ease, border-color 150ms ease;
+}
+.whisperTextarea:focus {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(59, 140, 240, 0.45);
+}
+
+.formFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.charCounter {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.sendWhisperBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: none;
+    background: var(--brand, #3b8cf0);
+    color: white;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 150ms ease, transform 150ms ease;
+}
+.sendWhisperBtn:hover:not(:disabled) {
+    background: var(--brand-dark, #2b6fd6);
+    transform: translateY(-1px);
+}
+.sendWhisperBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Toast éphémère */
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: rgba(40, 40, 45, 0.88);
+    backdrop-filter: blur(8px);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+    animation: toastIn 200ms ease forwards;
+}
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, 10px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Animations de Like */
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.35); }
+    50% { transform: scale(0.9); }
+    75% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+.heartActive {
+    color: #ec486e;
+    fill: #ec486e;
+    animation: heartbeat 450ms ease-in-out;
+}
+
+.likedBtn {
+    color: #ec486e !important;
+    background: rgba(236, 72, 110, 0.08) !important;
+}
+
+/* Bouton commentaire actif */
+.activeCommentBtn {
+    color: var(--brand) !important;
+    background: rgba(59, 140, 240, 0.08) !important;
+}
+
+/* Section des commentaires développée sous le post */
+.repliesSection {
+    margin-top: 10px;
+    margin-left: 20px;
+    padding-left: 16px;
+    border-left: 2px solid rgba(120, 100, 160, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 6px;
+}
+
+.replyItem {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    padding: 10px 12px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(120, 100, 160, 0.03);
+}
+
+.replyAvatarCol {
+    flex-shrink: 0;
+}
+
+.replyAvatarLink {
+    text-decoration: none;
+    display: flex;
+    transition: transform 150ms ease;
+}
+.replyAvatarLink:hover {
+    transform: scale(1.05);
+}
+
+.replyAvatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #b490ca 0%, #7ec8e3 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.replyBody {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.replyHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.replyUsernameLink {
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+    display: inline-block;
+}
+.replyUsernameLink:hover .replyUsername {
+    color: var(--brand);
+}
+
+.replyUsername {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 150ms ease;
+}
+
+.replyTime {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.replyText {
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.showMoreCommentsBtn {
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(120, 100, 160, 0.15);
+    background: rgba(255, 255, 255, 0.75);
+    color: var(--brand, #3b8cf0);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.showMoreCommentsBtn:hover {
+    background: rgba(59, 140, 240, 0.08);
+    border-color: rgba(59, 140, 240, 0.3);
+    transform: translateY(-1px);
+}
+
+.showMoreCommentsBtn:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* Styles pour les médias attachés (photo/vidéo) */
+.mediaContainer {
+    width: 100%;
+    padding-left: 46px;
+    margin-bottom: 12px;
+}
+
+.postMedia {
+    width: 100%;
+    max-height: 380px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    object-fit: cover;
+    display: block;
+}
+
+.compact .mediaContainer {
+    padding-left: 0;
+}
+
+.compact .postMedia {
+    max-height: 150px;
+}
+
+/* Styles pour composer un commentaire */
+.commentForm {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.commentInputWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 999px;
+    padding: 4px 6px 4px 14px;
+    transition: background 150ms ease, border-color 150ms ease;
+}
+
+.commentInputWrapper:focus-within {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(59, 140, 240, 0.45);
+}
+
+.commentInput {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.commentInput::placeholder {
+    color: var(--text-muted);
+}
+
+.commentSendBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: var(--brand, #3b8cf0);
+    color: white;
+    cursor: pointer;
+    transition: background 150ms ease, transform 150ms ease;
+}
+
+.commentSendBtn:hover:not(:disabled) {
+    background: var(--brand-dark, #2b6fd6);
+    transform: scale(1.05);
+}
+
+.commentSendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--text-muted);
+}
+
+.noCommentsText {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 4px 6px;
+}
+
+/* Actions sur les commentaires */
+.replyActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.replyActionBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.replyActionBtn:hover {
+    background: rgba(120, 100, 160, 0.08);
+    color: var(--text-primary);
+}
+
+.replyActionCount {
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+/* Indicateur de réponse en cours */
+.replyingToIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(59, 140, 240, 0.08);
+    border: 1px solid rgba(59, 140, 240, 0.15);
+    padding: 6px 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.replyingToIndicator strong {
+    color: var(--brand);
+}
+
+.cancelReplyBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 50%;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.cancelReplyBtn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+/* Badge "En réponse à" sur les commentaires */
+.replyToCommentBadge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.replyToCommentBadge strong {
+    color: var(--brand);
+    font-weight: 600;
+}
+
+/* Threading de réponses de commentaires */
+.replyNode {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.subRepliesList {
+    margin-left: 20px;
+    border-left: 2px solid rgba(120, 100, 160, 0.08);
+    padding-left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.subReplyItem {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.40);
+    padding: 8px 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(120, 100, 160, 0.02);
+}
+
+.subReplyAvatarCol {
+    flex-shrink: 0;
+}
+
+.subReplyAvatarLink {
+    text-decoration: none;
+    display: flex;
+    transition: transform 150ms ease;
+}
+
+.subReplyAvatarLink:hover {
+    transform: scale(1.05);
+}
+
+.subReplyAvatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #b490ca 0%, #7ec8e3 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 0.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+/* Formulaire de réponse en ligne sous un commentaire */
+.replyInlineFormWrapper {
+    width: 100%;
+    margin-top: 8px;
+}
+
+/* Rendre les commentaires avec enfants cliquables */
+.clickableReplyItem {
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+.clickableReplyItem:hover {
+    background: rgba(255, 255, 255, 0.45);
+    border-color: rgba(120, 100, 160, 0.15);
+}
+.clickableReplyItem:active {
+    transform: scale(0.995);
+}
+
+/* Bouton pour afficher/masquer les réponses enfants */
+.toggleSubRepliesBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(120, 100, 160, 0.04);
+    border: 1px solid rgba(120, 100, 160, 0.08);
+    color: var(--brand, #3b8cf0);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 999px;
+    transition: background 150ms ease, border-color 150ms ease;
+}
+.toggleSubRepliesBtn:hover {
+    background: rgba(59, 140, 240, 0.08);
+    border-color: rgba(59, 140, 240, 0.2);
+}
+

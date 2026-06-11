@@ -1,0 +1,88 @@
+/* Ligne de notification */
+.item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 2px 12px rgba(120, 100, 160, 0.07);
+    position: relative;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    cursor: pointer;
+}
+.item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 18px rgba(120, 100, 160, 0.12);
+}
+
+/* Fond légèrement différent si non lue */
+.unread {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(59, 140, 240, 0.20);
+}
+
+/* Pastille colorée avec l'icône */
+.iconWrap {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Texte de la notification */
+.body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.text {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+.userLink {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+.userLink:hover strong {
+    text-decoration: underline;
+}
+.text strong { font-weight: 700; color: var(--brand); }
+
+/* Extrait du post concerné */
+.excerpt {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* Petit point rouge en haut à droite pour les non lues */
+.unreadDot {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 6px rgba(59, 140, 240, 0.5);
+}
