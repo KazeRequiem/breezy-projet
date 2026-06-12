@@ -56,4 +56,36 @@ describe("messageController.create", () => {
         await messageController.create(req, res);
         expect(res.status).toHaveBeenCalledWith(201);
     });
+
+    describe("messageController.getByUser", () => {
+
+        beforeEach(() => jest.clearAllMocks());
+
+        test("retourne les messages d'un utilisateur donné", async () => {
+            const fakeMessages = [
+                { id_message: 1, content: "Post 1", id_user: 5 },
+                { id_message: 2, content: "Post 2", id_user: 5 },
+            ];
+            db.Message.findAll.mockResolvedValue(fakeMessages);
+
+            const req = { params: { id_user: "5" } };
+            const res = mockRes();
+            await messageController.getByUser(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(fakeMessages);
+            const findArg = db.Message.findAll.mock.calls[0][0];
+            expect(findArg.where.id_user).toBe("5");
+        });
+
+        test("retourne un tableau vide si l'utilisateur n'a pas de message", async () => {
+            db.Message.findAll.mockResolvedValue([]);
+            const req = { params: { id_user: "99" } };
+            const res = mockRes();
+            await messageController.getByUser(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith([]);
+        });
+    });
 });
