@@ -2,9 +2,9 @@ name: Analyse SonarCloud
 
 on:
   push:
-    branches: [ "main", "master", "dev" ]
+    branches: [ "main", "master", "dev", "feat/SonarQube" ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [ "main", "master", "dev" ]
 
 jobs:
   sonarcloud:
@@ -14,14 +14,14 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Crucial pour l'historique Git et les lignes modifiées
+          fetch-depth: 0
 
       - name: Scan SonarCloud
         uses: SonarSource/sonarcloud-github-action@v3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Géré automatiquement par GitHub
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    # Le secret configuré par ton ami
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-             -Dsonar.projectKey=kazerequiem
-             -Dsonar.organization=kazerequiem
+            -Dsonar.projectKey=kazerequiem
+            -Dsonar.organization=kazerequiem
