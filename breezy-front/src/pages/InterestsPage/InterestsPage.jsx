@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronRight, ArrowLeft, Compass, Tag, Plus, Check, Settings, X } from 'lucide-react'
 import TopBar          from '../../components/layout/TopBar/TopBar'
 import BottomNav        from '../../components/layout/BottomNav/BottomNav'
@@ -326,27 +326,27 @@ const getRepliesForPost = (postId) => {
     return all
 }
 
+// Lecture initiale du localStorage (lazy initializer, exécuté une seule fois)
+function loadInitialTags() {
+    const storedTags = localStorage.getItem('selectedTags')
+    if (storedTags) {
+        try {
+            return JSON.parse(storedTags)
+        } catch {
+            return ['Breezy', 'UIDesign', 'WebDev']
+        }
+    }
+    const initialTags = ['Breezy', 'UIDesign', 'WebDev', 'Nature', 'Gaming']
+    localStorage.setItem('selectedTags', JSON.stringify(initialTags))
+    return initialTags
+}
+
 // Page principale pour afficher les posts par centre d'intérêt
 function InterestsPage() {
-    const [selectedTags, setSelectedTags] = useState([])
+    // Initialisation depuis localStorage via lazy initializer
+    const [selectedTags, setSelectedTags] = useState(loadInitialTags)
     const [focusTag, setFocusTag] = useState(null)
     const [showManageDrawer, setShowManageDrawer] = useState(false)
-
-    // Récupère les tags de l'utilisateur stockés localement
-    useEffect(() => {
-        const storedTags = localStorage.getItem('selectedTags')
-        if (storedTags) {
-            try {
-                setSelectedTags(JSON.parse(storedTags))
-            } catch {
-                setSelectedTags(['Breezy', 'UIDesign', 'WebDev'])
-            }
-        } else {
-            const initialTags = ['Breezy', 'UIDesign', 'WebDev', 'Nature', 'Gaming']
-            setSelectedTags(initialTags)
-            localStorage.setItem('selectedTags', JSON.stringify(initialTags))
-        }
-    }, [])
 
     // Filtre les posts associés à un tag (sans sensible à la casse) et exclut les réponses
     const getPostsForTag = (tag) => {
@@ -517,13 +517,12 @@ function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
     const [tempTags, setTempTags] = useState([])
     const [search, setSearch] = useState('')
 
-    // Reset du buffer local à chaque ouverture
-    useEffect(() => {
-        if (isOpen) {
-            setTempTags(selectedTags)
-            setSearch('')
-        }
-    }, [isOpen, selectedTags])
+    // Reset du buffer local à la fermeture
+    const handleClose = () => {
+        setTempTags(selectedTags)
+        setSearch('')
+        onClose()
+    }
 
     if (!isOpen) return null
 
@@ -540,11 +539,11 @@ function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
     )
 
     return (
-        <div className={styles.drawerOverlay} onClick={onClose} role="dialog" aria-modal="true">
+        <div className={styles.drawerOverlay} onClick={handleClose} role="dialog" aria-modal="true">
             <div className={styles.drawerCard} onClick={(e) => e.stopPropagation()}>
                 <header className={styles.drawerHeader}>
                     <h2 className={styles.drawerTitle}>Gérer mes centres d'intérêts</h2>
-                    <button className={styles.closeBtn} onClick={onClose} aria-label="Fermer le panneau">
+                    <button className={styles.closeBtn} onClick={handleClose} aria-label="Fermer le panneau">
                         <X size={18} />
                     </button>
                 </header>

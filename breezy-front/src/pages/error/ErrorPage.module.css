@@ -1,0 +1,198 @@
+/* Pages d'erreur Breezy (401, 404…) */
+
+/* Wrapper plein écran */
+.wrapper {
+    position: relative;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 24px;
+}
+
+/* Halos décoratifs */
+.halo1 {
+    position: fixed;
+    width: 380px; height: 380px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    filter: blur(70px);
+    top: -80px; right: 5%;
+    pointer-events: none;
+    animation: haloFloat 10s ease-in-out infinite alternate;
+}
+
+.halo2 {
+    position: fixed;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    filter: blur(52px);
+    bottom: 40px; left: -60px;
+    pointer-events: none;
+    animation: haloFloat 13s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes haloFloat {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(18px, 14px) scale(1.08); }
+}
+
+/* Carte glassmorphism centrale */
+.card {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 52px 40px 44px;
+    max-width: 420px;
+    width: 100%;
+    border-radius: 28px;
+
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow:
+        0 8px 32px rgba(120, 100, 160, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90);
+
+    text-align: center;
+}
+
+/* Grand code d'erreur (404, 401…) */
+.code {
+    font-size: 5.5rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+
+    background: linear-gradient(135deg, #3b8cf0 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+
+    filter: drop-shadow(0 4px 12px rgba(59, 140, 240, 0.25));
+}
+
+/* Variante orange/rouge pour 401 */
+.codeWarning {
+    background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    filter: drop-shadow(0 4px 12px rgba(249, 115, 22, 0.25));
+}
+
+/* Ligne de vent décorative */
+.windLine {
+    width: 60px;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(120, 100, 160, 0.30), transparent);
+    margin: 4px 0;
+}
+
+/* Titre de l'erreur */
+.title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+/* Description */
+.subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 300px;
+    margin-bottom: 8px;
+}
+
+/* Groupe de boutons */
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 280px;
+    margin-top: 8px;
+}
+
+/* Bouton principal (gradient bleu) */
+.btnPrimary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+
+    background: linear-gradient(135deg, #4fa3f7 0%, #2b72e8 100%);
+    box-shadow: 0 5px 18px rgba(43, 114, 232, 0.35);
+    border: none;
+
+    transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+
+.btnPrimary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(43, 114, 232, 0.42);
+}
+
+.btnPrimary:active {
+    transform: scale(0.97);
+}
+
+/* Bouton secondaire (verre translucide) */
+.btnSecondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+
+    background: rgba(255, 255, 255, 0.50);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.70);
+    box-shadow: 0 3px 12px rgba(120, 100, 160, 0.10);
+
+    transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+    font-family: inherit;
+}
+
+.btnSecondary:hover {
+    background: rgba(255, 255, 255, 0.70);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(120, 100, 160, 0.16);
+}
+
+.btnSecondary:active {
+    transform: scale(0.97);
+}
+
+/* Responsive : boutons côte à côte sur desktop */
+@media (min-width: 480px) {
+    .actions {
+        flex-direction: row;
+        max-width: 340px;
+    }
+
+    .btnPrimary,
+    .btnSecondary {
+        flex: 1;
+    }
+}

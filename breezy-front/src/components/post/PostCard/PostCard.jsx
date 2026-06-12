@@ -56,11 +56,14 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         }))
     }
 
-    useEffect(() => {
+    // Synchronisation des replies via le pattern "derived state"
+    const [prevPostId, setPrevPostId] = useState(post.id_message)
+    if (prevPostId !== post.id_message) {
+        setPrevPostId(post.id_message)
         setLocalReplies(replies)
         setRepliesCount(replies.length || replies_count)
-        setExpandedComments({}) // reset when post changes
-    }, [post.id_message])
+        setExpandedComments({})
+    }
 
     const handleLikeComment = (commentId) => {
         setLocalReplies(prev => prev.map(reply => {
@@ -119,8 +122,10 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         e.preventDefault()
         if (!newCommentText.trim()) return
 
+        // ID unique généré via un compteur ref (jamais appelé pendant le rendu)
+        const commentId = ++commentIdRef.current
         const newComment = {
-            id_message: Date.now(),
+            id_message: commentId,
             content: newCommentText,
             date_publication: new Date().toISOString(),
             author: { id_user: 1, username: currentLoggedUser, profile_picture: null },
@@ -136,7 +141,9 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         showToast('Commentaire ajouté ! 🍃')
     }
 
+    const commentIdRef = useRef(0) // compteur d'IDs locaux pour les nouveaux commentaires
     const menuRef = useRef(null)
+
 
     // Fermeture du menu 3 points lors d'un clic extérieur
     useEffect(() => {
@@ -407,7 +414,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                     depth > 0 ? styles.subReplyItem : styles.replyItem,
                                     children.length > 0 ? styles.clickableReplyItem : ''
                                 ].join(' ')}
-                                onClick={(e) => {
+                                onClick={() => {
                                     if (children.length > 0) {
                                         toggleExpandComment(reply.id_message)
                                     }
