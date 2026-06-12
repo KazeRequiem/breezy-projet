@@ -26,3 +26,19 @@ exports.create = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
+
+exports.getByUser = async (req,res) =>{
+    try{
+        const {id_user}= req.params;
+
+        const messages = await Message.findAll({
+            where: {id_user},
+            order: [["date publication","DESC"]] //Filter to have the most recent in first
+        });
+
+        res.status(200).json(messages);
+    }catch(err) {
+        console.error(err);
+        res.status(500).json({message: "Erreur serveur"});
+    }
+};
