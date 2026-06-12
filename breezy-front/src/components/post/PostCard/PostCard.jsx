@@ -3,14 +3,7 @@ import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, X, Send, ChevronDown, ChevronUp } from 'lucide-react'
 import styles from './PostCard.module.css'
 
-// Formate une date ISO en temps relatif (ex: 4m, 2h, 3j)
-function formatRelativeTime(isoDate) {
-    const diff = Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000)
-    if (diff < 60)    return `${diff}s`
-    if (diff < 3600)  return `${Math.floor(diff / 60)}m`
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`
-    return `${Math.floor(diff / 86400)}j`
-}
+import { formatRelativeTime } from '../../../utils/formatRelativeTime'
 
 // Carte d'affichage d'un post (Feed principal & Centres d'intérêts)
 function PostCard({ post, threadVariant, animDelay = '', compact = false, replies = [] }) {
