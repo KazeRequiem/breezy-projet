@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { UserX } from 'lucide-react'
 import TopBar          from '../../components/layout/TopBar/TopBar'
@@ -200,7 +200,7 @@ const getMockUser = (username) => {
 }
 
 /**
- * ProfilePage — Page de profil utilisateur (Fx4, Fx10, Fx11).
+ * ProfilePage : Page de profil utilisateur (Fx4, Fx10, Fx11).
  *
  * Affiche la bannière, l'avatar, la bio, les stats et les derniers posts.
  * Charge les données de l'utilisateur passé dans l'URL.
@@ -211,20 +211,16 @@ function ProfilePage() {
 
     const profileUser = getMockUser(username || currentLoggedUser)
 
-    const [userPosts, setUserPosts] = useState([])
+    // Posts dérivés directement depuis profileUser (pas de state redondant)
+    const userPosts = profileUser ? profileUser.posts : []
+
     const [isComposerOpen, setIsComposerOpen] = useState(false)
+    const [localPosts, setLocalPosts] = useState(userPosts)
+    const [breezesCount, setBreezesCount] = useState(profileUser?.breezes_count ?? 0)
     
     // Gérer l'état de follow par utilisateur
     const [follows, setFollows] = useState({})
     const isFollowing = profileUser ? !!follows[profileUser.username.toLowerCase()] : false
-
-    useEffect(() => {
-        if (profileUser) {
-            setUserPosts(profileUser.posts)
-        } else {
-            setUserPosts([])
-        }
-    }, [username, profileUser])
 
     const toggleFollow = () => {
         if (!profileUser) return
@@ -236,7 +232,7 @@ function ProfilePage() {
 
     const handlePublish = (content, media = null) => {
         const newPost = {
-            id_message: Date.now(),
+            id_message: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
             content,
             date_publication: new Date().toISOString(),
             author: { id_user: 1, username: 'baptistenoisette', profile_picture: null },
@@ -246,10 +242,8 @@ function ProfilePage() {
             reply_to: null,
             media,
         }
-        setUserPosts(prev => [newPost, ...prev])
-        if (profileUser) {
-            profileUser.breezes_count = (profileUser.breezes_count || 0) + 1
-        }
+        setLocalPosts(prev => [newPost, ...prev])
+        setBreezesCount(prev => prev + 1)
     }
 
     // Si le profil n'existe pas, on affiche un état "profil introuvable"
@@ -311,7 +305,7 @@ function ProfilePage() {
                         {/* Compteurs */}
                         <div className={styles.statsWrap}>
                             <ProfileStats
-                                breezesCount={userPosts.length}
+                                breezesCount={breezesCount}
                                 followersCount={profileUser.followers_count + (isFollowing ? 1 : 0)}
                                 followingCount={profileUser.following_count}
                             />
@@ -322,12 +316,12 @@ function ProfilePage() {
                     <section className={styles.postsSection} aria-label="Derniers Breezes">
                         <h2 className={styles.sectionTitle}>Derniers Breezes</h2>
                         <div className={styles.postList}>
-                            {userPosts.length === 0 ? (
+                            {localPosts.length === 0 ? (
                                 <p style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                     Aucun message publié.
                                 </p>
                             ) : (
-                                userPosts.map((post, i) => (
+                                localPosts.map((post, i) => (
                                     <PostCard
                                         key={post.id_message}
                                         post={post}

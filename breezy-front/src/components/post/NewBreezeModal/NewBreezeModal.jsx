@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { X, Send, PenTool, Image as ImageIcon } from 'lucide-react'
 import styles from './NewBreezeModal.module.css'
 
@@ -11,18 +11,19 @@ function NewBreezeModal({ isOpen, onClose, onPublish }) {
     const publishingTimeoutRef = useRef(null)
     const closeTimeoutRef = useRef(null)
 
-    // Reset à l'ouverture, nettoyage des timeouts au démontage
-    useEffect(() => {
-        if (isOpen) {
-            setContent('')
-            setMedia(null)
-            setStatus('idle')
-        }
-        return () => {
-            if (publishingTimeoutRef.current) clearTimeout(publishingTimeoutRef.current)
-            if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
-        }
-    }, [isOpen])
+    // Nettoyage des timeouts au démontage via ref de fermeture
+    const clearTimeouts = useCallback(() => {
+        if (publishingTimeoutRef.current) clearTimeout(publishingTimeoutRef.current)
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+    }, [])
+
+    // Reset de l'état du modal à l'ouverture (géré dans handleOpen appelé par le parent)
+    const handleReset = useCallback(() => {
+        clearTimeouts()
+        setContent('')
+        setMedia(null)
+        setStatus('idle')
+    }, [clearTimeouts])
 
     const handleFileChange = (e) => {
         const file = e.target.files?.[0]
@@ -59,11 +60,12 @@ function NewBreezeModal({ isOpen, onClose, onPublish }) {
         }, 1000)
     }
 
-    // Libérer l'URL d'objet à la fermeture du modal pour éviter les fuites de mémoire
+    // Libérer l'URL d'objet à la fermeture du modal pour éviter les fuites de mémoire, puis reset
     const handleClose = () => {
         if (media?.url) {
             URL.revokeObjectURL(media.url)
         }
+        handleReset()
         onClose()
     }
 

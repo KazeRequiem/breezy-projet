@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Check, Hash, ChevronRight, User, ImagePlus } from 'lucide-react'
 import AuthCard   from '../../components/ui/AuthCard/AuthCard'
@@ -45,13 +45,13 @@ function RegisterPage() {
     const [bio,          setBio]          = useState('')
     const [selectedTags, setSelectedTags] = useState([])
 
-    /* ── Helpers ── */
+    /* Helpers */
     const updateCred = field => e => { setError(''); setCreds(p => ({ ...p, [field]: e.target.value })) }
     const toggleTag  = tag   => setSelectedTags(prev =>
         prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     )
 
-    /* ── Soumission étape 1 ── */
+    /* Soumission étape 1 */
     const handleStep1 = e => {
         e.preventDefault()
         setError('')
@@ -63,7 +63,7 @@ function RegisterPage() {
         setStep(2)
     }
 
-    /* ── Soumission étape 2 (captcha) ── */
+    /* Soumission étape 2 (captcha) */
     const handleStep2 = e => {
         e.preventDefault()
         setError('')
@@ -75,7 +75,7 @@ function RegisterPage() {
         setStep(3)
     }
 
-    /* ── Soumission étape 3 (finalisation) ── */
+    /* Soumission étape 3 (finalisation) */
     const handleStep3 = async e => {
         e.preventDefault()
         if (selectedTags.length === 0) { setError('Choisis au moins un centre d\'intérêt.'); return }
@@ -101,7 +101,7 @@ function RegisterPage() {
         }
     }
 
-    /* ── Titres par étape ── */
+    /* Titres par étape */
     const titles    = ['Créer un compte', 'Vérification', 'Ton profil']
     const subtitles = [
         'Rejoins Breezy dès maintenant \uD83C\uDF0A',
@@ -115,7 +115,7 @@ function RegisterPage() {
             {/* Indicateur d'étapes */}
             <StepIndicator current={step} total={3} />
 
-            {/* ── Étape 1 : Infos de base ── */}
+            {/* Étape 1 : Infos de base */}
             {step === 1 && (
                 <form className={styles.form} onSubmit={handleStep1} noValidate aria-label="Étape 1 : informations">
                     <GlassInput id="reg-username" label="Nom d'utilisateur" type="text"     placeholder="jean_dupont"      value={creds.username} onChange={updateCred('username')} required />
@@ -149,7 +149,7 @@ function RegisterPage() {
                 </form>
             )}
 
-            {/* ── Étape 2 : Anti-robot ── */}
+            {/* Étape 2 : Anti-robot */}
             {step === 2 && (
                 <form className={styles.form} onSubmit={handleStep2} noValidate aria-label="Étape 2 : vérification">
                     <div className={regStyles.captchaBox}>
@@ -173,7 +173,7 @@ function RegisterPage() {
                 </form>
             )}
 
-            {/* ── Étape 3 : Configuration du profil ── */}
+            {/* Étape 3 : Configuration du profil */}
             {step === 3 && (
                 <form className={styles.form} onSubmit={handleStep3} noValidate aria-label="Étape 3 : profil">
 
@@ -250,7 +250,7 @@ function RegisterPage() {
 }
 
 /**
- * StepIndicator — Affiche la progression en étapes (dots).
+ * StepIndicator : Affiche la progression en étapes (dots).
  *
  * @param {number} current - Étape actuelle (1-indexed)
  * @param {number} total   - Nombre total d'étapes
