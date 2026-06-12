@@ -1,0 +1,27 @@
+name: Analyse SonarCloud
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Crucial pour l'historique Git et les lignes modifiées
+
+      - name: Scan SonarCloud
+        uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Géré automatiquement par GitHub
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    # Le secret configuré par ton ami
+        with:
+          args: >
+             -Dsonar.projectKey=kazerequiem
+             -Dsonar.organization=kazerequiem
