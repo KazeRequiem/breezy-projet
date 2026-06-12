@@ -23,6 +23,7 @@ async function start() {
 
     app.use("/api/auth", require("./routes/auth"));
     app.use("/api/messages", require("./routes/message"));
+    app.use("/api/follow", require("./routes/follow"));
 
     app.listen(PORT, () => console.log(`Serveur sur port :  ${PORT}`));
   } catch(err) {
