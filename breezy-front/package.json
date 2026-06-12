@@ -30,6 +30,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "init-tw": "tailwindcss init -p"
+    "init-tw": "tailwindcss init -p",
+    "test": "vitest run"
   }
 }
