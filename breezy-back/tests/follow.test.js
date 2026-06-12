@@ -7,7 +7,7 @@ jest.mock("../models", () => ({
 }));
 
 const db = require("../models");
-const followController = require = ("../controllers/followController");
+const followController = require("../controllers/followController"); 
 
 function mockRes() {
     const res = {};
@@ -16,8 +16,8 @@ function mockRes() {
     return (res);
 }
 
-decribe("followController.follow", () => {
-    BeforeEach(() => jest.clearAllMocks());
+describe("followController.follow", () => {
+    beforeEach(() => jest.clearAllMocks());
 
     test("Refus de se suivre soit même", async () => {
         const req = { params: { id_user_follow: "1" }, user: { id_user: 1 } };
@@ -27,7 +27,7 @@ decribe("followController.follow", () => {
         expect(db.Follow.create).not.toHaveBeenCalled();
     });
 
-    test("Refus si on suit déjà cette personne", () => {
+    test("Refus si on suit déjà cette personne", async () => {
         db.Follow.findOne.mockResolvedValue({ id_user: 1, id_user_follow: 2 });
         const req = { params: { id_user_follow: "2" }, user: { id_user: 1 } };
         const res = mockRes();
@@ -45,21 +45,21 @@ decribe("followController.follow", () => {
         await followController.follow(req, res);
 
         expect(res.status).toHaveBeenCalledWith(201);
-        const createArg = db.Follow.create.mock.call[0][0];
+        const createArg = db.Follow.create.mock.calls[0][0];
         expect(createArg.id_user).toBe(1); //Follower = token
         expect(createArg.id_user_follow).toBe("2"); // Target = URL
     });
 });
 
-decribe("followController.unfollow", () => {
-    BeforeEach(() => jest.clearAllMocks());
+describe("followController.unfollow", () => {
+    beforeEach(() => jest.clearAllMocks());
 
     test("Supprime le suivi existant", async () => {
         db.Follow.destroy.mockResolvedValue(1);
         const req = { params: { id_user_follow: "2" }, user: { id_user: 1 } };
         const res = mockRes();
         await followController.unfollow(req, res);
-        expec(res.status).toHaveBeenCalledWith(200);
+        expect(res.status).toHaveBeenCalledWith(200);
     });
 
     test("renvoie 404 si le suivi n'existait pas", async () => {

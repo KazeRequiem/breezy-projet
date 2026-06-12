@@ -26,7 +26,6 @@ exports.register = async (req, res) => {
             password: hashed,
             biography: biography || null,
             profile_picture: profile_picture || null,
-            role: "user",
         });
 
         res.status(201).json({
