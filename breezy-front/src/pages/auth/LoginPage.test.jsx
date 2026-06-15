@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import LoginPage from './LoginPage'
+import { AuthProvider } from '../../contexts/AuthContext'
+import * as authService from '../../services/authService'
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -12,12 +14,18 @@ vi.mock('react-router-dom', async () => {
     }
 })
 
+vi.mock('../../services/authService', () => ({
+    login: vi.fn(),
+}))
+
 describe('LoginPage', () => {
     it('affiche le formulaire de connexion avec email et mot de passe', () => {
         render(
-            <MemoryRouter>
-                <LoginPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <LoginPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         expect(screen.getByLabelText(/Adresse e-mail/i)).toBeInTheDocument()
@@ -27,10 +35,18 @@ describe('LoginPage', () => {
     })
 
     it('permet de saisir les identifiants et de soumettre le formulaire', async () => {
+        // Mock the API call to resolve successfully
+        authService.login.mockResolvedValueOnce({
+            token: 'fake-jwt',
+            user: { id_user: 1, role: 'user' }
+        })
+
         render(
-            <MemoryRouter>
-                <LoginPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <LoginPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         const emailInput = screen.getByLabelText(/Adresse e-mail/i)
@@ -45,7 +61,9 @@ describe('LoginPage', () => {
 
         fireEvent.click(submitBtn)
         
-        // La soumission navigue vers /feed
-        expect(mockNavigate).toHaveBeenCalledWith('/feed')
+        // La soumission navigue vers /feed (attendre car asynchrone)
+        await waitFor(() => {
+            expect(mockNavigate).toHaveBeenCalledWith('/feed')
+        })
     })
 })
