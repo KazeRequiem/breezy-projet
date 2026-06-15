@@ -1,0 +1,407 @@
+.wrapper {
+    position: relative;
+    min-height: 100dvh;
+    padding-top: 62px; /* hauteur TopBar mobile */
+}
+
+/* ── En-tête ── */
+.main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 100px;
+    position: relative;
+    z-index: 1;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 24px rgba(59, 140, 240, 0.08);
+}
+
+.headerTitle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.headerTitle h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.headerSub {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Onglets ── */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.tab:hover {
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.tabActive {
+    background: var(--brand);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(59, 140, 240, 0.35);
+}
+
+.tabActive:hover {
+    background: var(--brand-dark);
+    color: white;
+}
+
+.tabCount {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.tabActive .tabCount {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Panneau ── */
+.panel {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.panelNote {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: rgba(59, 140, 240, 0.06);
+    border-bottom: 1px solid rgba(59, 140, 240, 0.1);
+    padding: 10px 20px;
+}
+
+.panelNote code {
+    font-family: 'Fira Code', monospace;
+    background: rgba(59, 140, 240, 0.1);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+/* ── Tableau ── */
+.table {
+    width: 100%;
+}
+
+.tableRow {
+    display: grid;
+    grid-template-columns: 180px 1fr 140px 120px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background 150ms ease;
+}
+
+.tableRow:last-child {
+    border-bottom: none;
+}
+
+.tableRow:not(.tableHead):hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.tableHead {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+/* ── Cellules ── */
+.userCell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.miniAvatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand) 0%, #ff8a8a 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.usernameLink {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    display: block;
+}
+
+.usernameLink:hover {
+    color: var(--brand);
+}
+
+.contentCell {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+}
+
+.emailCell {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dateCell {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* ── Badges de rôle ── */
+.badgeAdmin {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badgeModerator {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(234, 179, 8, 0.12);
+    color: #b45309;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badgeUser {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(59, 140, 240, 0.1);
+    color: var(--brand-dark);
+    border: 1px solid rgba(59, 140, 240, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ── Bouton supprimer ── */
+.deleteBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.06);
+    color: #dc2626;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.deleteBtn:hover {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-1px);
+}
+
+/* ── Sélecteur de rôle ── */
+.roleCell {
+    display: flex;
+    align-items: center;
+}
+
+.roleBadge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.selfBadge {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
+}
+
+.roleSelect {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.select {
+    appearance: none;
+    padding: 4px 28px 4px 10px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 150ms ease;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.select:focus {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+
+.selectChevron {
+    position: absolute;
+    right: 8px;
+    pointer-events: none;
+    color: var(--text-muted);
+}
+
+/* ── État vide ── */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px;
+    color: var(--text-muted);
+}
+
+/* ── Accès refusé ── */
+.accessDenied {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.accessDeniedCard {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 24px;
+    padding: 48px 40px;
+    max-width: 420px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+}
+
+.accessDeniedCard h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 16px 0 8px;
+    color: var(--text-primary);
+}
+
+.accessDeniedCard p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+}
+
+.backBtn {
+    display: inline-block;
+    padding: 10px 24px;
+    background: var(--brand);
+    color: white;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: background 150ms ease, transform 150ms ease;
+}
+
+.backBtn:hover {
+    background: var(--brand-dark);
+    transform: translateY(-1px);
+}
+
+/* ── Desktop ── */
+@media (min-width: 768px) {
+    .wrapper {
+        padding-top: 0;
+        padding-left: 260px;
+    }
+
+    .main {
+        padding: 32px 24px 40px;
+    }
+}
+
+@media (max-width: 640px) {
+    .tableRow {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+    }
+}

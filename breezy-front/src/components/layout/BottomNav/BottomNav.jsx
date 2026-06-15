@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Compass, Search, Bell } from 'lucide-react'
+import { Home, Compass, Search, Bell, ShieldCheck } from 'lucide-react'
 import logoBreezy from '../../../assets/logo-breezy.png'
+import { useAuth } from '../../../contexts/AuthContext'
+import RequireRole from '../../ui/RequireRole/RequireRole'
 import styles from './BottomNav.module.css'
 
 // Liens de la navigation principale
@@ -10,20 +12,12 @@ const NAV_ITEMS = [
     { path: '/interests', icon: Compass, label: 'Intérêts' },
 ]
 
-// Base de données pour les suggestions de recherche
-const SEARCHABLE_USERS = [
-    { username: 'baptistenoisette', name: 'Baptiste Noisette' },
-    { username: 'camille_lrt', name: 'Camille Lrt' },
-    { username: 'tommrc', name: 'Tom Mrc' },
-    { username: 'leaft_', name: 'Leaft' },
-    { username: 'noah_brd', name: 'Noah Brd' },
-]
-
 // Navigation principale (barre mobile en bas, sidebar desktop à gauche)
 function BottomNav() {
     const { pathname } = useLocation()
     const navigate = useNavigate()
-    const username = 'baptistenoisette'
+    const { user } = useAuth()
+    const username = user?.username ?? ''
 
     // États recherche
     const [searchQuery, setSearchQuery] = useState('')
@@ -52,6 +46,10 @@ function BottomNav() {
         setShowSuggestions(false)
         navigate(`/profile/${userUsername}`)
     }
+
+    // La recherche utilise une liste statique pour la démo.
+    // TODO: remplacer par un appel API /api/users/search?q=... quand disponible
+    const SEARCHABLE_USERS = []
 
     const suggestions = searchQuery.trim()
         ? SEARCHABLE_USERS.filter(u =>
@@ -147,17 +145,17 @@ function BottomNav() {
 
                 {/* Profil utilisateur en haut à gauche (sous la recherche dans la sidebar) */}
                 <Link 
-                    to={`/profile/${username}`} 
+                    to={username ? `/profile/${username}` : '/login'}
                     className={styles.sidebarProfile}
                     aria-label="Mon profil"
                     id="sidebar-profile-link"
                 >
                     <div className={styles.sidebarAvatar} aria-hidden="true">
-                        {username.charAt(0).toUpperCase()}
+                        {username ? username.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div className={styles.sidebarProfileInfo}>
-                        <span className={styles.sidebarProfileName}>Baptiste Noisette</span>
-                        <span className={styles.sidebarProfileHandle}>@{username}</span>
+                        <span className={styles.sidebarProfileName}>{username || 'Invité'}</span>
+                        <span className={styles.sidebarProfileHandle}>{username ? `@${username}` : ''}</span>
                     </div>
                 </Link>
 
@@ -179,6 +177,22 @@ function BottomNav() {
                             </Link>
                         )
                     })}
+
+                    {/* Lien Admin dans la sidebar desktop — admin/moderator uniquement */}
+                    <RequireRole allowedRoles={['admin', 'moderator']}>
+                        <Link
+                            to="/admin"
+                            className={[
+                                styles.sidebarItem,
+                                pathname === '/admin' ? styles.sidebarItemActive : '',
+                            ].join(' ')}
+                            aria-current={pathname === '/admin' ? 'page' : undefined}
+                            id="sidebar-admin-link"
+                        >
+                            <ShieldCheck size={20} strokeWidth={pathname === '/admin' ? 2.5 : 1.8} />
+                            <span>Admin</span>
+                        </Link>
+                    </RequireRole>
                 </nav>
             </aside>
 
