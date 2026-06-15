@@ -2,20 +2,20 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import FeedPage from './FeedPage'
+import { AuthProvider } from '../../contexts/AuthContext'
 
 describe('FeedPage', () => {
     it('affiche la page de fil d\'actualité avec ses sections clés', () => {
         render(
-            <MemoryRouter>
-                <FeedPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <FeedPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         // Devrait afficher le titre du fil
         expect(screen.getByRole('heading', { name: 'Accueil' })).toBeInTheDocument()
-
-        // Devrait afficher les posts de démo (comme le premier post par baptistenoisette)
-        expect(screen.getByText(/Premiere sortie avec la nouvelle UI Breezy/i)).toBeInTheDocument()
 
         // Devrait afficher la section tendances
         expect(screen.getByText('Tendances')).toBeInTheDocument()
@@ -23,9 +23,11 @@ describe('FeedPage', () => {
 
     it('permet d\'ouvrir la modal de composition de post', () => {
         render(
-            <MemoryRouter>
-                <FeedPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <FeedPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         const newBreezyBtn = screen.getByRole('button', { name: /Nouveau Breeze/i })

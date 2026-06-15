@@ -2,13 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import NotificationsPage from './NotificationsPage'
+import { AuthProvider } from '../../contexts/AuthContext'
 
 describe('NotificationsPage', () => {
     it('affiche les notifications et le badge non lu', () => {
         render(
-            <MemoryRouter>
-                <NotificationsPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <NotificationsPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         expect(screen.getByRole('heading', { name: /Notifications/i })).toBeInTheDocument()
@@ -24,9 +27,11 @@ describe('NotificationsPage', () => {
 
     it('permet de filtrer les notifications par type', () => {
         render(
-            <MemoryRouter>
-                <NotificationsPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <NotificationsPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         // Cliquer sur le filtre "Mentions"
@@ -47,9 +52,11 @@ describe('NotificationsPage', () => {
 
     it('permet de marquer toutes les notifications comme lues', () => {
         render(
-            <MemoryRouter>
-                <NotificationsPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <NotificationsPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         const readAllBtn = screen.getByRole('button', { name: /Tout marquer comme lu/i })
