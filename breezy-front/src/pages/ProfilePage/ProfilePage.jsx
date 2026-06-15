@@ -25,7 +25,7 @@ function parseHashtags(text) {
 
 // TODO : remplacer par un appel API GET /api/users/:username
 // (profils et posts chargés depuis la base de données)
-const getMockUser = (_username) => null
+const getMockUser = () => null
 
 /**
  * ProfilePage : Page de profil utilisateur (Fx4, Fx10, Fx11).

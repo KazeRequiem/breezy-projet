@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Trash2, Users, MessageSquare, ChevronDown, RotateCcw } from 'lucide-react'
+import { ShieldCheck, Trash2, Users, MessageSquare, ChevronDown } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import RequireRole from '../../components/ui/RequireRole/RequireRole'
 import TopBar from '../../components/layout/TopBar/TopBar'
