@@ -29,7 +29,8 @@ function LoginPage() {
             setError('Veuillez saisir votre adresse e-mail.')
             return
         }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        // Regex standard, non vulnérable au ReDoS (catastrophic backtracking)
+        const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
         if (!emailRegex.test(form.email.trim())) {
             setError('Veuillez saisir une adresse e-mail valide (ex : jean@exemple.com).')
             return
