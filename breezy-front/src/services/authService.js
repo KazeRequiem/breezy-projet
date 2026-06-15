@@ -36,7 +36,7 @@ async function apiFetch(path, options = {}) {
 
 /**
  * login() : Authentifie un utilisateur.
- * @returns {{ token: string, user: { id_user, username, email, role } }}
+ * @returns {Promise<{ token: string, user: { id_user: number, username: string, email: string, role: string } }>}
  */
 export async function login(email, password) {
     return apiFetch('/api/auth/login', {
@@ -47,7 +47,7 @@ export async function login(email, password) {
 
 /**
  * register() : Crée un nouveau compte utilisateur.
- * @returns {{ id_user, username, email, role }}
+ * @returns {Promise<{ id_user: number, username: string, email: string, role: string }>}
  */
 export async function register(username, email, password, biography = null) {
     return apiFetch('/api/auth/register', {

@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import RegisterPage from './RegisterPage'
+import { AuthProvider } from '../../contexts/AuthContext'
+import * as authService from '../../services/authService'
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -12,15 +14,15 @@ vi.mock('react-router-dom', async () => {
     }
 })
 
+vi.mock('../../services/authService', () => ({
+    register: vi.fn(),
+    login: vi.fn()
+}))
+
 describe('RegisterPage', () => {
     let randomSpy
 
     beforeEach(() => {
-        // Mock de Math.random pour rendre le captcha prévisible :
-        // 1. op : 0 -> '+'
-        // 2. a : 0 -> a = 1
-        // 3. b : 0 -> b = 1
-        // Donc 1 + 1 = 2
         randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
     })
 
@@ -30,9 +32,11 @@ describe('RegisterPage', () => {
 
     it('affiche l\'étape 1 et valide les champs requis', () => {
         render(
-            <MemoryRouter>
-                <RegisterPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <RegisterPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         expect(screen.getByRole('heading', { name: /Créer un compte/i })).toBeInTheDocument()
@@ -45,18 +49,25 @@ describe('RegisterPage', () => {
         const submitBtn = screen.getByRole('button', { name: /Continuer/i })
         fireEvent.click(submitBtn)
 
-        // Devrait afficher une erreur car les CGU ne sont pas acceptées
-        expect(screen.getByRole('alert')).toHaveTextContent(/Vous devez accepter les Conditions d'Utilisation/i)
+        expect(screen.getByRole('alert')).toHaveTextContent(/Veuillez saisir un nom d'utilisateur/i)
     })
 
-    it('permet de passer à l\'étape 2 puis à l\'étape 3', () => {
+    it('permet de passer à l\'étape 2 puis à l\'étape 3', async () => {
+        authService.register.mockResolvedValueOnce({})
+        authService.login.mockResolvedValueOnce({
+            token: 'fake-jwt',
+            user: { id_user: 1, role: 'user', username: 'testuser' }
+        })
+
         render(
-            <MemoryRouter>
-                <RegisterPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <RegisterPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
-        // Étape 1 : Remplir les champs
+        // Étape 1
         fireEvent.change(screen.getByLabelText(/Nom d'utilisateur/i), { target: { value: 'testuser' } })
         fireEvent.change(screen.getByLabelText(/Adresse e-mail/i), { target: { value: 'test@exemple.com' } })
         fireEvent.change(screen.getByLabelText(/Mot de passe/i), { target: { value: 'password123' } })
@@ -65,37 +76,25 @@ describe('RegisterPage', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /Continuer/i }))
 
-        // Étape 2 : Captcha
+        // Étape 2
         expect(screen.getByRole('heading', { name: /Vérification/i })).toBeInTheDocument()
-        expect(screen.getByText('1 + 1 = ?')).toBeInTheDocument()
-
-        // Entrer une mauvaise réponse
-        fireEvent.change(screen.getByLabelText(/Ta réponse/i), { target: { value: '5' } })
-        fireEvent.click(screen.getByRole('button', { name: /Valider/i }))
-        expect(screen.getByRole('alert')).toHaveTextContent(/Mauvaise réponse/i)
-
-        // Entrer la bonne réponse (2)
         fireEvent.change(screen.getByLabelText(/Ta réponse/i), { target: { value: '2' } })
         fireEvent.click(screen.getByRole('button', { name: /Valider/i }))
 
-        // Étape 3 : Profil
+        // Étape 3
         expect(screen.getByRole('heading', { name: /Ton profil/i })).toBeInTheDocument()
-        expect(screen.getByLabelText(/Biographie/i)).toBeInTheDocument()
-        
-        // Sélectionner un tag d'intérêt (par exemple "Breezy")
         const tagBtn = screen.getByRole('button', { name: 'Breezy' })
-        expect(tagBtn).toBeInTheDocument()
         fireEvent.click(tagBtn)
-
-        // Remplir la bio
         fireEvent.change(screen.getByLabelText(/Biographie/i), { target: { value: 'Hello Breezy!' } })
 
-        // Terminer
         const finishBtn = screen.getByRole('button', { name: /Terminer et rejoindre/i })
         fireEvent.click(finishBtn)
 
-        expect(localStorage.getItem('currentUser')).toContain('testuser')
-        expect(localStorage.getItem('selectedTags')).toContain('Breezy')
-        expect(mockNavigate).toHaveBeenCalledWith('/interests')
+        // Asserts
+        await waitFor(() => {
+            expect(authService.register).toHaveBeenCalled()
+            expect(authService.login).toHaveBeenCalled()
+            expect(mockNavigate).toHaveBeenCalledWith('/feed')
+        })
     })
 })

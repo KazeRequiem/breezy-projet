@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthCard  from '../../components/ui/AuthCard/AuthCard'
 import GlassInput from '../../components/ui/GlassInput/GlassInput'
+import { useAuth } from '../../contexts/AuthContext'
+import { login as apiLogin } from '../../services/authService'
 import styles from './AuthPage.module.css'
 
 // Page de connexion utilisateur
 function LoginPage() {
-    const navigate = useNavigate()
+    const navigate  = useNavigate()
+    const { login } = useAuth()
+
     const [form,    setForm]    = useState({ email: '', password: '' })
     const [loading, setLoading] = useState(false)
     const [error,   setError]   = useState('')
@@ -18,13 +22,36 @@ function LoginPage() {
 
     const handleSubmit = async e => {
         e.preventDefault()
-        setLoading(true)
         setError('')
+
+        // Validation côté front avant d'appeler l'API
+        if (!form.email.trim()) {
+            setError('Veuillez saisir votre adresse e-mail.')
+            return
+        }
+        // Regex standard, non vulnérable au ReDoS (catastrophic backtracking)
+        const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
+        if (!emailRegex.test(form.email.trim())) {
+            setError('Veuillez saisir une adresse e-mail valide (ex : jean@exemple.com).')
+            return
+        }
+        if (!form.password) {
+            setError('Veuillez saisir votre mot de passe.')
+            return
+        }
+
+        setLoading(true)
         try {
-            // TODO: await authService.login(form.email, form.password)
-            navigate('/feed')
-        } catch {
-            setError('Email ou mot de passe incorrect.')
+            const { token, user } = await apiLogin(form.email, form.password)
+            login(token, user)
+            // Redirection selon le rôle
+            if (user.role === 'admin' || user.role === 'moderator') {
+                navigate('/admin')
+            } else {
+                navigate('/feed')
+            }
+        } catch (err) {
+            setError(err.message || 'Email ou mot de passe incorrect.')
         } finally {
             setLoading(false)
         }

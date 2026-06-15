@@ -2,17 +2,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import InterestsPage from './InterestsPage'
+import { AuthProvider } from '../../contexts/AuthContext'
 
 describe('InterestsPage', () => {
     beforeEach(() => {
-        localStorage.clear()
+        sessionStorage.clear()
     })
 
     it('affiche le titre et les sections de tags par défaut', () => {
         render(
-            <MemoryRouter>
-                <InterestsPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <InterestsPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         expect(screen.getByRole('heading', { name: /Mes centres d'intérêts/i })).toBeInTheDocument()
@@ -23,9 +26,11 @@ describe('InterestsPage', () => {
 
     it('permet d\'ouvrir le tiroir de gestion et d\'ajouter/supprimer des tags', () => {
         render(
-            <MemoryRouter>
-                <InterestsPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <InterestsPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         const manageBtn = screen.getByRole('button', { name: /Gérer mes tags/i })
@@ -53,16 +58,18 @@ describe('InterestsPage', () => {
         // Le tag Art doit être présent maintenant
         expect(screen.getByRole('heading', { name: /#Art/i })).toBeInTheDocument()
         
-        // Vérifier localStorage
-        const stored = JSON.parse(localStorage.getItem('selectedTags'))
+        // Vérifier sessionStorage
+        const stored = JSON.parse(sessionStorage.getItem('breezy_tags'))
         expect(stored).toContain('Art')
     })
 
     it('permet de basculer en mode focus sur un tag puis de revenir', () => {
         render(
-            <MemoryRouter>
-                <InterestsPage />
-            </MemoryRouter>
+            <AuthProvider>
+                <MemoryRouter>
+                    <InterestsPage />
+                </MemoryRouter>
+            </AuthProvider>
         )
 
         // Cliquer sur "Voir plus" pour le tag #Nature
