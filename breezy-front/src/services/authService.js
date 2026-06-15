@@ -16,6 +16,8 @@ const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 async function apiFetch(path, options = {}) {
     let res
     try {
+        // TODO (Sécurité) : Quand le back sera en httpOnly, décommenter cette ligne pour envoyer automatiquement le cookie :
+        // options.credentials = 'include'
         res = await fetch(`${API_BASE}${path}`, {
             headers: { 'Content-Type': 'application/json', ...options.headers },
             ...options,

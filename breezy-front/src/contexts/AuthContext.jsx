@@ -1,47 +1,33 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from 'react'
 
-/**
- * AuthContext : Contexte React central pour la session utilisateur.
- *
- * ── Stockage du token ────────────────────────────────────────────────────────
- * On utilise sessionStorage (et non localStorage) pour une raison de sécurité :
- *   • sessionStorage est effacé à la fermeture de l'onglet/navigateur,
- *     ce qui réduit considérablement la fenêtre d'exposition en cas d'XSS.
- *   • localStorage persiste indéfiniment → risque plus élevé.
- *
- * ⚠️  La vraie protection contre le vol de token (XSS) est le cookie httpOnly
- *     positionné par le serveur via Set-Cookie. C'est la responsabilité du Back.
- *     Côté Front, on ne peut pas faire mieux que sessionStorage sans cooperation
- *     du serveur.
- *
- * Contenu stocké : { user: { id_user, username, email, role }, token }
- * Exposé via useAuth() : { user, token, role, isAuthenticated, login, logout }
- */
 const AuthContext = createContext(null)
 
+// TODO (Sécurité) : Quand le back passera aux cookies httpOnly, on ne gérera plus le token ici.
+// Le navigateur le stockera et l'enverra tout seul. On gardera uniquement SESSION_USER_KEY.
 const SESSION_TOKEN_KEY = 'breezy_token'
 const SESSION_USER_KEY  = 'breezy_user'
 
 export function AuthProvider({ children }) {
-    const [user,  setUser]  = useState(null)
-    const [token, setToken] = useState(null)
-
-    // Restauration de la session depuis sessionStorage au montage
-    // (survit aux rechargements de page dans le même onglet, pas à la fermeture)
-    useEffect(() => {
+    const [user, setUser] = useState(() => {
+        try {
+            const storedUser = sessionStorage.getItem(SESSION_USER_KEY)
+            return storedUser ? JSON.parse(storedUser) : null
+        } catch {
+            sessionStorage.removeItem(SESSION_USER_KEY)
+            return null
+        }
+    })
+    
+    const [token, setToken] = useState(() => {
         try {
             const storedToken = sessionStorage.getItem(SESSION_TOKEN_KEY)
-            const storedUser  = sessionStorage.getItem(SESSION_USER_KEY)
-            if (storedToken && storedUser) {
-                setToken(storedToken)
-                setUser(JSON.parse(storedUser))
-            }
+            return storedToken || null
         } catch {
-            // Token corrompu ou expiré → nettoyer
             sessionStorage.removeItem(SESSION_TOKEN_KEY)
-            sessionStorage.removeItem(SESSION_USER_KEY)
+            return null
         }
-    }, [])
+    })
 
     /**
      * login() : Appelé après un login ou register réussi depuis l'API.
@@ -49,6 +35,8 @@ export function AuthProvider({ children }) {
      * @param {{ id_user, username, email, role }} newUser
      */
     const login = (newToken, newUser) => {
+        // TODO (Sécurité) : Avec httpOnly, `newToken` ne sera plus fourni ou on l'ignorera.
+        // On fera juste : sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(newUser))
         sessionStorage.setItem(SESSION_TOKEN_KEY, newToken)
         sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(newUser))
         setToken(newToken)
@@ -57,6 +45,8 @@ export function AuthProvider({ children }) {
 
     /** logout() : Nettoie la session et vide le state */
     const logout = () => {
+        // TODO (Sécurité) : Avec httpOnly, il faudra d'abord faire un appel API (ex: fetch('/api/auth/logout')) 
+        // pour dire au serveur de supprimer le cookie, avant de vider le state local.
         sessionStorage.removeItem(SESSION_TOKEN_KEY)
         sessionStorage.removeItem(SESSION_USER_KEY)
         setToken(null)
