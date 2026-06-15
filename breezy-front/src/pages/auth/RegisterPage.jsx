@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Check, Hash, ChevronRight, User, ImagePlus } from 'lucide-react'
 import AuthCard   from '../../components/ui/AuthCard/AuthCard'
 import GlassInput from '../../components/ui/GlassInput/GlassInput'
+import { useAuth } from '../../contexts/AuthContext'
+import { register as apiRegister, login as apiLogin } from '../../services/authService'
 import styles from './AuthPage.module.css'
 import regStyles from './RegisterPage.module.css'
 
@@ -27,8 +29,9 @@ function generateCaptcha() {
 // Inscription en 3 étapes : Infos → Captcha → Profil/Tags favoris
 function RegisterPage() {
     const navigate = useNavigate()
+    const { login } = useAuth()
 
-    /* ── État global du formulaire ── */
+    /* État global du formulaire */
     const [step,   setStep]   = useState(1)
     const [loading, setLoading] = useState(false)
     const [error,   setError]   = useState('')
@@ -37,11 +40,11 @@ function RegisterPage() {
     const [creds, setCreds] = useState({ username: '', email: '', password: '', confirm: '' })
     const [acceptTerms, setAcceptTerms] = useState(false)
 
-    /* Étape 2 — captcha */
+    /* Étape 2 captcha */
     const [captcha]        = useState(generateCaptcha)
     const [captchaAnswer,   setCaptchaAnswer]   = useState('')
 
-    /* Étape 3 — profil */
+    /* Étape 3 profil */
     const [bio,          setBio]          = useState('')
     const [selectedTags, setSelectedTags] = useState([])
 
@@ -55,11 +58,40 @@ function RegisterPage() {
     const handleStep1 = e => {
         e.preventDefault()
         setError('')
+
+        if (!creds.username.trim()) {
+            setError("Veuillez saisir un nom d'utilisateur.")
+            return
+        }
+        if (creds.username.trim().length < 3) {
+            setError("Le nom d'utilisateur doit contenir au moins 3 caractères.")
+            return
+        }
+        if (!creds.email.trim()) {
+            setError('Veuillez saisir votre adresse e-mail.')
+            return
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(creds.email.trim())) {
+            setError('Veuillez saisir une adresse e-mail valide (ex : jean@exemple.com).')
+            return
+        }
+        if (!creds.password) {
+            setError('Veuillez saisir un mot de passe.')
+            return
+        }
+        if (creds.password.length < 8) {
+            setError('Le mot de passe doit contenir au moins 8 caractères.')
+            return
+        }
+        if (creds.password !== creds.confirm) {
+            setError('Les mots de passe ne correspondent pas.')
+            return
+        }
         if (!acceptTerms) {
             setError("Vous devez accepter les Conditions d'Utilisation pour continuer.")
             return
         }
-        if (creds.password !== creds.confirm) { setError('Les mots de passe ne correspondent pas.'); return }
         setStep(2)
     }
 
@@ -75,27 +107,23 @@ function RegisterPage() {
         setStep(3)
     }
 
-    /* Soumission étape 3 (finalisation) */
+    /* Soumission étape 3 — appel API réel */
     const handleStep3 = async e => {
         e.preventDefault()
         if (selectedTags.length === 0) { setError('Choisis au moins un centre d\'intérêt.'); return }
         setLoading(true)
         setError('')
         try {
-            // Simulation de persistance locale pour le prototype
-            const userProfile = {
-                username: creds.username,
-                email: creds.email,
-                bio: bio,
-                tags: selectedTags,
-                profile_picture: null,
-            }
-            localStorage.setItem('currentUser', JSON.stringify(userProfile))
-            localStorage.setItem('selectedTags', JSON.stringify(selectedTags))
-            
-            navigate('/interests')
-        } catch {
-            setError('Une erreur est survenue. Réessaie.')
+            // 1. Créer le compte
+            await apiRegister(creds.username, creds.email, creds.password, bio || null)
+
+            // 2. Login automatique pour récupérer le token et le stocker
+            const { token, user } = await apiLogin(creds.email, creds.password)
+            login(token, user)
+
+            navigate('/feed')
+        } catch (err) {
+            setError(err.message || 'Une erreur est survenue. Réessaie.')
         } finally {
             setLoading(false)
         }
