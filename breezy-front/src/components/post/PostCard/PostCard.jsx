@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, X, Send, ChevronDown, ChevronUp } from 'lucide-react'
+import { useAuth } from '../../../contexts/AuthContext'
+import RequireRole from '../../ui/RequireRole/RequireRole'
 import styles from './PostCard.module.css'
 
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
@@ -19,8 +21,11 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         media          = null,
     } = post
 
-    const currentLoggedUser = 'baptistenoisette'
-    const isOwn = author.username.toLowerCase() === currentLoggedUser.toLowerCase()
+    const { user } = useAuth()
+    const currentLoggedUser = user?.username ?? null
+    const isOwn = currentLoggedUser
+        ? author.username.toLowerCase() === currentLoggedUser.toLowerCase()
+        : false
 
     // États locaux
     const [showMenu, setShowMenu]       = useState(false)
@@ -257,7 +262,8 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
                         {showMenu && (
                             <div className={[styles.dropdownMenu, 'anim-fade-up'].join(' ')}>
-                                {isOwn ? (
+                                {/* Supprimer : auteur du post */}
+                                {isOwn && (
                                     <button 
                                         className={[styles.dropdownItem, styles.dangerItem].join(' ')} 
                                         onClick={handleDelete}
@@ -266,16 +272,38 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                         <Trash size={14} />
                                         <span>Supprimer le post</span>
                                     </button>
-                                ) : (
-                                    <button 
-                                        className={styles.dropdownItem} 
-                                        onClick={handleReport}
-                                        id={`report-btn-${id_message}`}
-                                        disabled={isReported}
+                                )}
+
+                                {/* Supprimer (modération) : admin ou moderator sur n'importe quel post */}
+                                {!isOwn && (
+                                    <RequireRole allowedRoles={['admin', 'moderator']}>
+                                        <button 
+                                            className={[styles.dropdownItem, styles.dangerItem].join(' ')} 
+                                            onClick={handleDelete}
+                                            id={`admin-delete-btn-${id_message}`}
+                                        >
+                                            <Trash size={14} />
+                                            <span>Supprimer (modération)</span>
+                                        </button>
+                                    </RequireRole>
+                                )}
+
+                                {/* Signaler : uniquement si pas son propre post et pas admin/mod */}
+                                {!isOwn && (
+                                    <RequireRole
+                                        allowedRoles={['user']}
+                                        fallback={null}
                                     >
-                                        <AlertTriangle size={14} />
-                                        <span>{isReported ? 'Signalé' : 'Signaler le post'}</span>
-                                    </button>
+                                        <button 
+                                            className={styles.dropdownItem} 
+                                            onClick={handleReport}
+                                            id={`report-btn-${id_message}`}
+                                            disabled={isReported}
+                                        >
+                                            <AlertTriangle size={14} />
+                                            <span>{isReported ? 'Signalé' : 'Signaler le post'}</span>
+                                        </button>
+                                    </RequireRole>
                                 )}
                             </div>
                         )}

@@ -9,6 +9,7 @@ import ProfileHeader    from '../../components/profile/ProfileHeader/ProfileHead
 import ProfileStats     from '../../components/profile/ProfileStats/ProfileStats'
 import PostCard         from '../../components/post/PostCard/PostCard'
 import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal'
+import { useAuth } from '../../contexts/AuthContext'
 import styles from './ProfilePage.module.css'
 
 // Helper pour extraire les hashtags d'un message
@@ -22,182 +23,9 @@ function parseHashtags(text) {
     return matches
 }
 
-// Base de données de démonstration d'utilisateurs et de leurs posts (avec commentaires de démo)
-const MOCK_USERS = {
-    baptistenoisette: {
-        username:     'baptistenoisette',
-        bio:          'Dev web, café addict et explorateur de code propre. Paris.',
-        location:     'Paris, France',
-        banner_color: '#e88a8a',
-        breezes_count:   3,
-        followers_count: 286,
-        following_count: 379,
-        posts: [
-            {
-                id_message: 201,
-                content: "Breezy est rapide et léger — exactement ce qu'il faut pour coder depuis un café avec du mauvais wifi.",
-                date_publication: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-                author: { id_user: 1, username: 'baptistenoisette', profile_picture: null },
-                likes_count: 28, replies_count: 2,
-                tags: ['Breezy', 'Dev'],
-                reply_to: null,
-                replies: [
-                    {
-                        id_message: 2011,
-                        content: "Tellement vrai ! Un bon café et du code, le paradis ☕💻",
-                        date_publication: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString(),
-                        author: { id_user: 2, username: 'camille_lrt', profile_picture: null }
-                    },
-                    {
-                        id_message: 2012,
-                        content: "Et le mode offline, vous y avez pensé ?",
-                        date_publication: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-                        author: { id_user: 3, username: 'tommrc', profile_picture: null }
-                    }
-                ]
-            },
-            {
-                id_message: 202,
-                content: 'JWT courte durée + refresh token = le combo parfait pour vos APIs. Ne faites pas confiance aux sessions longues.',
-                date_publication: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-                author: { id_user: 1, username: 'baptistenoisette', profile_picture: null },
-                likes_count: 2, replies_count: 4,
-                tags: ['WebDev', 'Tech'],
-                reply_to: null,
-                replies: [
-                    {
-                        id_message: 2021,
-                        content: "Tout à fait d'accord, la sécurité avant tout !",
-                        date_publication: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
-                        author: { id_user: 3, username: 'tommrc', profile_picture: null }
-                    },
-                    {
-                        id_message: 2022,
-                        content: "Tu utilises quoi pour gérer le refresh token côté client ?",
-                        date_publication: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-                        author: { id_user: 4, username: 'leaft_', profile_picture: null }
-                    },
-                    {
-                        id_message: 2023,
-                        content: "Un article de blog sur le sujet bientôt ?",
-                        date_publication: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-                        author: { id_user: 5, username: 'noah_brd', profile_picture: null }
-                    },
-                    {
-                        id_message: 2024,
-                        content: "Perso je stocke le refresh token en httpOnly cookie. Le plus sûr.",
-                        date_publication: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-                        author: { id_user: 12, username: 'hugo_designer', profile_picture: null }
-                    }
-                ]
-            },
-            {
-                id_message: 203,
-                content: "Dark mode = moins de fatigue oculaire. Light mode = les utilisateurs qui confondent leur écran avec une fenêtre. 😂",
-                date_publication: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-                author: { id_user: 1, username: 'baptistenoisette', profile_picture: null },
-                likes_count: 1037, replies_count: 0,
-                tags: ['UIDesign', 'Design'],
-                reply_to: null,
-            },
-        ]
-    },
-    camille_lrt: {
-        username:     'camille_lrt',
-        bio:          'Product Designer & passionnée d\'interfaces fluides. 🎨✨',
-        location:     'Lyon, France',
-        banner_color: 'linear-gradient(135deg, #b490ca 0%, #e88a8a 100%)',
-        breezes_count:   2,
-        followers_count: 412,
-        following_count: 188,
-        posts: [
-            {
-                id_message: 301,
-                content: "Trop d'accord ! Le fond qui change doucement c'est mon detail prefere. Ca donne vraiment vie a l'appli ✨",
-                date_publication: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
-                author: { id_user: 2, username: 'camille_lrt', profile_picture: null },
-                likes_count: 11, replies_count: 0,
-                tags: ['UI', 'Design'],
-                reply_to: { id_message: 1, author: { id_user: 1, username: 'baptistenoisette' } },
-            },
-            {
-                id_message: 302,
-                content: "En train de bosser sur les maquettes du profil utilisateur... Le glassmorphism rend tellement bien sur grand écran.",
-                date_publication: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                author: { id_user: 2, username: 'camille_lrt', profile_picture: null },
-                likes_count: 45, replies_count: 0,
-                tags: ['UIDesign', 'Breezy'],
-                reply_to: null,
-            }
-        ]
-    },
-    tommrc: {
-        username:     'tommrc',
-        bio:          'Fullstack Dev | Fan de React & Node.js. Codeur nocturne.',
-        location:     'Nantes, France',
-        banner_color: 'linear-gradient(135deg, #7ec8e3 0%, #3b8cf0 100%)',
-        breezes_count:   1,
-        followers_count: 98,
-        following_count: 145,
-        posts: [
-            {
-                id_message: 401,
-                content: "Quelqu'un a remarque que le background change en permanence ? C'est subtil mais trop sympa 👀",
-                date_publication: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
-                author: { id_user: 3, username: 'tommrc', profile_picture: null },
-                likes_count: 47, replies_count: 0,
-                tags: ['WebDev', 'React'],
-                reply_to: null,
-            }
-        ]
-    },
-    leaft_: {
-        username:     'leaft_',
-        bio:          'Créateur de solutions CSS élégantes et d\'animations fluides.',
-        location:     'Bordeaux, France',
-        banner_color: 'linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%)',
-        breezes_count:   1,
-        followers_count: 154,
-        following_count: 89,
-        posts: [
-            {
-                id_message: 501,
-                content: "Oui ! C'est une animation CSS sur le background, ca tourne en boucle. Le detail fait vraiment la difference.",
-                date_publication: new Date(Date.now() - 38 * 60 * 1000).toISOString(),
-                author: { id_user: 4, username: 'leaft_', profile_picture: null },
-                likes_count: 9, replies_count: 0,
-                tags: ['CSS', 'Animation'],
-                reply_to: { id_message: 3, author: { id_user: 3, username: 'tommrc' } },
-            }
-        ]
-    },
-    noah_brd: {
-        username:     'noah_brd',
-        bio:          'Étudiant en informatique & curieux de tout. Tech lover.',
-        location:     'Lille, France',
-        banner_color: 'linear-gradient(135deg, #FBD3E9 0%, #BB9FDF 100%)',
-        breezes_count:   1,
-        followers_count: 67,
-        following_count: 132,
-        posts: [
-            {
-                id_message: 601,
-                content: "Est-ce qu'il y aura un mode sombre ? Le fond holographique est beau mais parfois un peu lumineux la nuit 🌙",
-                date_publication: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-                author: { id_user: 5, username: 'noah_brd', profile_picture: null },
-                likes_count: 8, replies_count: 0,
-                tags: ['Feedback'],
-                reply_to: null,
-            }
-        ]
-    }
-}
-
-// Fonction pour récupérer un utilisateur existant
-const getMockUser = (username) => {
-    const key = username.toLowerCase()
-    return MOCK_USERS[key] || null
-}
+// TODO : remplacer par un appel API GET /api/users/:username
+// (profils et posts chargés depuis la base de données)
+const getMockUser = (_username) => null
 
 /**
  * ProfilePage : Page de profil utilisateur (Fx4, Fx10, Fx11).
@@ -207,7 +35,8 @@ const getMockUser = (username) => {
  */
 function ProfilePage() {
     const { username } = useParams()
-    const currentLoggedUser = 'baptistenoisette' // L'utilisateur connecté
+    const { user } = useAuth()
+    const currentLoggedUser = user?.username ?? null
 
     const profileUser = getMockUser(username || currentLoggedUser)
 
@@ -231,11 +60,12 @@ function ProfilePage() {
     }
 
     const handlePublish = (content, media = null) => {
+        if (!user) return
         const newPost = {
             id_message: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
             content,
             date_publication: new Date().toISOString(),
-            author: { id_user: 1, username: 'baptistenoisette', profile_picture: null },
+            author: { id_user: user.id_user, username: user.username, profile_picture: null },
             likes_count: 0,
             replies_count: 0,
             tags: parseHashtags(content),
@@ -277,7 +107,9 @@ function ProfilePage() {
         )
     }
 
-    const isOwn = (username || currentLoggedUser).toLowerCase() === currentLoggedUser.toLowerCase()
+    const isOwn = currentLoggedUser
+        ? (username || currentLoggedUser).toLowerCase() === currentLoggedUser.toLowerCase()
+        : false
 
     return (
         <div className={styles.wrapper}>

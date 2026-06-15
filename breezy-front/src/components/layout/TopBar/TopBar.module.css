@@ -88,6 +88,29 @@
     box-shadow: 0 0 4px rgba(255, 77, 79, 0.4);
 }
 
+/* Groupe d'icônes à droite (admin + notifs) */
+.rightActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Lien Admin (bouclier) — visible seulement pour admin/moderator */
+.adminLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--brand);
+    transition: color 150ms ease, transform 150ms ease, background 150ms ease;
+}
+.adminLink:hover {
+    background: rgba(59, 140, 240, 0.12);
+    transform: scale(1.08);
+}
+
 @media (min-width: 768px) {
     .topbar { display: none; }
 }
