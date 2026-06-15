@@ -38,7 +38,7 @@ function ProfilePage() {
     const { user } = useAuth()
     const currentLoggedUser = user?.username ?? null
 
-    const profileUser = getMockUser(username || currentLoggedUser)
+    const profileUser = getMockUser()
 
     // Posts dérivés directement depuis profileUser (pas de state redondant)
     const userPosts = profileUser ? profileUser.posts : []
