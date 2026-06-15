@@ -49,7 +49,7 @@ describe('RegisterPage', () => {
         const submitBtn = screen.getByRole('button', { name: /Continuer/i })
         fireEvent.click(submitBtn)
 
-        expect(screen.getByRole('alert')).toHaveTextContent(/Vous devez accepter les Conditions d'Utilisation/i)
+        expect(screen.getByRole('alert')).toHaveTextContent(/Veuillez saisir un nom d'utilisateur/i)
     })
 
     it('permet de passer à l\'étape 2 puis à l\'étape 3', async () => {
