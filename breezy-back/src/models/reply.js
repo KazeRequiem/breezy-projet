@@ -1,11 +1,12 @@
-const { DataTypes } = require("sequelize");
+const mongoose = require("mongoose");
 
-module.exports = (sequelize) =>
-    sequelize.define(
-        "Reply",
-        {
-            id_message: { type: DataTypes.INTEGER, primaryKey: true},
-            id_message_reply: { type: DataTypes.INTEGER, primaryKey: true },
-        },
-        { tableName: "reply", timestamps: false }
-    );
+const replySchema = new mongoose.Schema(
+  {
+    message: { type: mongoose.Schema.Types.ObjectId, ref: "Message", required: true },
+    reply: { type: mongoose.Schema.Types.ObjectId, ref: "Message", required: true },
+    warn: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Reply", replySchema);

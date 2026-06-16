@@ -1,11 +1,13 @@
-const { DataTypes } = require("sequelize");
+const mongoose = require("mongoose");
 
-module.exports = (sequelize) =>
-    sequelize.define(
-        "Like",
-        {
-            id_user: { type: DataTypes.INTEGER, primaryKey: true},
-            id_message: { type: DataTypes.INTEGER, primary: true},
-        },
-        { tableName: "like", timestamps: false}
-    );
+const likeSchema = new mongoose.Schema(
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    message: { type: mongoose.Schema.Types.ObjectId, ref: "Message", required: true },
+  },
+  { timestamps: true }
+);
+
+likeSchema.index({ user: 1, message: 1 }, { unique: true });
+
+module.exports = mongoose.model("Like", likeSchema);

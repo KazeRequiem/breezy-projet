@@ -1,11 +1,14 @@
-const { DataTypes } = require("sequelize");
+const mongoose = require("mongoose");
 
-module.exports = (sequelize) =>
-    sequelize.define(
-        "Follow",
-        {
-            id_user: { type: DataTypes.INTEGER, primaryKey: true},
-            id_user_follow: { type:DataTypes.INTEGER, primaryKey: true},
-        },
-        { tableName: "follow", timestamps: false}
-    );
+const followSchema = new mongoose.Schema(
+  {
+    follower: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    following: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { timestamps: true }
+);
+
+// Empêche de suivre deux fois la même personne (équivalent clé composite)
+followSchema.index({ follower: 1, following: 1 }, { unique: true });
+
+module.exports = mongoose.model("Follow", followSchema);
