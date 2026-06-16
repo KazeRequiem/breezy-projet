@@ -1,11 +1,18 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 const db = require("./models");
 const { loadSecrets } = require("./config/secrets");
 
 const app = express();
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // Doc of the swagger

@@ -92,6 +92,17 @@ services:
     volumes:
       - ./openapi:/openapi
 
+  front:
+    build: ./breezy-front
+    restart: unless-stopped
+    depends_on:
+      - back
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./breezy-front:/app
+      - /app/node_modules
+
 volumes:
   pgdata:
   pgadmin_data:
