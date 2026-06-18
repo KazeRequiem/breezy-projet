@@ -162,6 +162,7 @@ function InterestsPage() {
                                             tag={tag}
                                             posts={getPostsForTag(tag)}
                                             onVoirPlus={setFocusTag}
+                                            repliesMap={repliesMap}
                                         />
                                     ))}
                                 </div>
@@ -198,7 +199,7 @@ function InterestsPage() {
 }
 
 // Une ligne de tag (défilement horizontal + bouton d'accès direct)
-function TagRow({ tag, posts, onVoirPlus }) {
+function TagRow({ tag, posts, onVoirPlus, repliesMap }) {
     return (
         <section className={styles.tagSection} aria-label={`Tag ${tag}`}>
             <header className={styles.sectionHeader}>

@@ -121,8 +121,8 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         e.preventDefault()
         if (!newCommentText.trim()) return
 
-        // ID unique sûr pour éviter tout conflit de clés
-        const commentId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
+        // ID unique pour éviter tout conflit de clés
+        const commentId = crypto.randomUUID()
         const newComment = {
             id_message: commentId,
             content: newCommentText,
@@ -153,7 +153,6 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         showToast('Commentaire ajouté ! 🍃')
     }
 
-    const commentIdRef = useRef(0) // conservé pour compatibilité de structure
     const menuRef = useRef(null)
 
 
