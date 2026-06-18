@@ -241,7 +241,7 @@ export function getMockUser(username) {
 }
 
 // Helper pour simuler la connexion
-export async function mockLogin(email, _password) {
+export async function mockLogin(email) {
     await new Promise(resolve => setTimeout(resolve, 600));
 
     // Cherche si l'email correspond à un de nos utilisateurs mockés
