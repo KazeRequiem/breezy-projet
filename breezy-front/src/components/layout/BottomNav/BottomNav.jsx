@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Compass, Search, Bell, ShieldCheck, X, User } from 'lucide-react'
+import { Home, Compass, Search, Bell, ShieldCheck, User } from 'lucide-react'
 import logoBreezy from '../../../assets/logo-breezy.png'
 import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'

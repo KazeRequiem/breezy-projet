@@ -1,13 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Bell, ShieldCheck } from 'lucide-react'
 import logoBreezy from '../../../assets/logo-breezy.png'
-import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import styles from './TopBar.module.css'
 
 function TopBar() {
-    const { user } = useAuth()
-    const username = user?.username ?? ''
 
     return (
         <header className={styles.topbar} role="banner" aria-label="En-tête Breezy">
