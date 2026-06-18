@@ -8,6 +8,7 @@ import InterestsPage      from './pages/InterestsPage/InterestsPage'
 import ProfilePage        from './pages/ProfilePage/ProfilePage'
 import NotificationsPage  from './pages/NotificationsPage/NotificationsPage'
 import TermsPage          from './pages/TermsPage/TermsPage'
+import PrivacyPage        from './pages/PrivacyPage/PrivacyPage'
 import AdminPage          from './pages/AdminPage/AdminPage'
 import ErrorPage          from './pages/error/ErrorPage'
 
@@ -43,6 +44,7 @@ function App() {
                     <Route path="/profile/:username"   element={<ProfilePage />} />
                     <Route path="/notifs"              element={<NotificationsPage />} />
                     <Route path="/terms"               element={<TermsPage />} />
+                    <Route path="/privacy"             element={<PrivacyPage />} />
                     <Route path="/admin"               element={<AdminPage />} />
                     <Route path="/401"                 element={<ErrorPage code={401} />} />
                     <Route path="*"                    element={<ErrorPage code={404} />} />

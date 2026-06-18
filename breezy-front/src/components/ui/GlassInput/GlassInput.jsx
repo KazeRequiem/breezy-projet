@@ -9,21 +9,28 @@
  * @param {function} onChange    Handler de changement
  * @param {boolean}  [required]  Champ obligatoire
  */
-function GlassInput({ id, label, type = 'text', placeholder, value, onChange, required = false }) {
+function GlassInput({ id, label, type = 'text', placeholder, value, onChange, required = false, rightElement }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label htmlFor={id} style={labelStyle}>{label}</label>
-            <input
-                id={id}
-                type={type}
-                placeholder={placeholder}
-                value={value}
-                onChange={onChange}
-                required={required}
-                style={inputBase}
-                onFocus={e  => Object.assign(e.target.style, inputFocused)}
-                onBlur={e   => Object.assign(e.target.style, inputBase)}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                <input
+                    id={id}
+                    type={type}
+                    placeholder={placeholder}
+                    value={value}
+                    onChange={onChange}
+                    required={required}
+                    style={{ ...inputBase, paddingRight: rightElement ? '40px' : '16px' }}
+                    onFocus={e  => Object.assign(e.target.style, { ...inputFocused, paddingRight: rightElement ? '40px' : '16px' })}
+                    onBlur={e   => Object.assign(e.target.style, { ...inputBase, paddingRight: rightElement ? '40px' : '16px' })}
+                />
+                {rightElement && (
+                    <div style={{ position: 'absolute', right: '12px', display: 'flex', alignItems: 'center' }}>
+                        {rightElement}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

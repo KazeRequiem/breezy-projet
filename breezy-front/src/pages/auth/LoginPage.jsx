@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import AuthCard  from '../../components/ui/AuthCard/AuthCard'
 import GlassInput from '../../components/ui/GlassInput/GlassInput'
 import { useAuth } from '../../contexts/AuthContext'
@@ -14,6 +15,7 @@ function LoginPage() {
     const [form,    setForm]    = useState({ email: '', password: '' })
     const [loading, setLoading] = useState(false)
     const [error,   setError]   = useState('')
+    const [showPassword, setShowPassword] = useState(false)
 
     const handleChange = field => e => {
         setError('')
@@ -61,7 +63,25 @@ function LoginPage() {
         <AuthCard title="Connexion" subtitle="Bon retour sur Breezy 👋">
             <form className={styles.form} onSubmit={handleSubmit} noValidate aria-label="Formulaire de connexion">
                 <GlassInput id="login-email"    label="Adresse e-mail" type="email"    placeholder="jean@exemple.com" value={form.email}    onChange={handleChange('email')}    required />
-                <GlassInput id="login-password" label="Mot de passe"   type="password" placeholder="********"          value={form.password} onChange={handleChange('password')} required />
+                <GlassInput 
+                    id="login-password" 
+                    label="Mot de passe"   
+                    type={showPassword ? 'text' : 'password'} 
+                    placeholder="********"          
+                    value={form.password} 
+                    onChange={handleChange('password')} 
+                    required 
+                    rightElement={
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}
+                            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    }
+                />
 
                 {error && <p className={styles.errorMsg} role="alert">{error}</p>}
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Check, Hash, ChevronRight, User, ImagePlus } from 'lucide-react'
+import { Check, Hash, ChevronRight, User, ImagePlus, Eye, EyeOff } from 'lucide-react'
 import AuthCard   from '../../components/ui/AuthCard/AuthCard'
 import GlassInput from '../../components/ui/GlassInput/GlassInput'
 import { useAuth } from '../../contexts/AuthContext'
@@ -39,6 +39,9 @@ function RegisterPage() {
     /* Étape 1 */
     const [creds, setCreds] = useState({ username: '', email: '', password: '', confirm: '' })
     const [acceptTerms, setAcceptTerms] = useState(false)
+    const [acceptPrivacy, setAcceptPrivacy] = useState(false)
+    const [acceptCookies, setAcceptCookies] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
 
     /* Étape 2 captcha */
     const [captcha]        = useState(generateCaptcha)
@@ -91,6 +94,10 @@ function RegisterPage() {
         }
         if (!acceptTerms) {
             setError("Vous devez accepter les Conditions d'Utilisation pour continuer.")
+            return
+        }
+        if (!acceptPrivacy) {
+            setError("Vous devez accepter la Politique de Confidentialité pour continuer.")
             return
         }
         setStep(2)
@@ -149,27 +156,63 @@ function RegisterPage() {
                 <form className={styles.form} onSubmit={handleStep1} noValidate aria-label="Étape 1 : informations">
                     <GlassInput id="reg-username" label="Nom d'utilisateur" type="text"     placeholder="jean_dupont"      value={creds.username} onChange={updateCred('username')} required />
                     <GlassInput id="reg-email"    label="Adresse e-mail"   type="email"    placeholder="jean@exemple.com" value={creds.email}    onChange={updateCred('email')}    required />
-                    <GlassInput id="reg-password" label="Mot de passe"     type="password" placeholder="********"      value={creds.password} onChange={updateCred('password')} required />
+                    <GlassInput 
+                        id="reg-password" 
+                        label="Mot de passe"     
+                        type={showPassword ? 'text' : 'password'} 
+                        placeholder="********"      
+                        value={creds.password} 
+                        onChange={updateCred('password')} 
+                        required 
+                        rightElement={
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}
+                                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        }
+                    />
                     <GlassInput id="reg-confirm"  label="Confirmer"        type="password" placeholder="********"      value={creds.confirm}  onChange={updateCred('confirm')}  required />
                     
-                    <div className={regStyles.termsBox}>
-                        <input
-                            type="checkbox"
-                            id="accept-terms"
-                            checked={acceptTerms}
-                            onChange={(e) => {
-                                setError('')
-                                setAcceptTerms(e.target.checked)
-                            }}
-                            required
-                        />
-                        <label htmlFor="accept-terms">
-                            En cochant cette case, j'accepte les{' '}
-                            <Link to="/terms" target="_blank" className={regStyles.termsLink}>
-                                Conditions d'Utilisation
-                            </Link>{' '}
-                            de Breezy.
-                        </label>
+                    <div className={regStyles.termsBox} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                            <input
+                                type="checkbox"
+                                id="accept-terms"
+                                checked={acceptTerms}
+                                onChange={(e) => { setError(''); setAcceptTerms(e.target.checked) }}
+                                required
+                            />
+                            <label htmlFor="accept-terms" style={{ fontSize: '0.85rem' }}>
+                                J'accepte les <Link to="/terms" target="_blank" className={regStyles.termsLink}>Conditions d'Utilisation</Link>.
+                            </label>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                            <input
+                                type="checkbox"
+                                id="accept-privacy"
+                                checked={acceptPrivacy}
+                                onChange={(e) => { setError(''); setAcceptPrivacy(e.target.checked) }}
+                                required
+                            />
+                            <label htmlFor="accept-privacy" style={{ fontSize: '0.85rem' }}>
+                                J'accepte la <Link to="/privacy" target="_blank" className={regStyles.termsLink}>Politique de confidentialité</Link>.
+                            </label>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                            <input
+                                type="checkbox"
+                                id="accept-cookies"
+                                checked={acceptCookies}
+                                onChange={(e) => setAcceptCookies(e.target.checked)}
+                            />
+                            <label htmlFor="accept-cookies" style={{ fontSize: '0.85rem' }}>
+                                J'accepte l'utilisation des cookies pour améliorer mon expérience (optionnel).
+                            </label>
+                        </div>
                     </div>
 
                     {error && <p className={styles.errorMsg} role="alert">{error}</p>}

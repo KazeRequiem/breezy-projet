@@ -1,4 +1,4 @@
-import { Edit3, Plus, UserCheck } from 'lucide-react'
+import { Edit3, Plus, UserCheck, Settings } from 'lucide-react'
 import styles from './ProfileHeader.module.css'
 
 /**
@@ -13,8 +13,9 @@ import styles from './ProfileHeader.module.css'
  * @param {function} onFollow  - Handler du bouton Suivre/Ne plus suivre
  * @param {function} onEdit    - Handler du bouton Modifier le profil
  * @param {function} onNewPost - Handler du bouton Nouveau Breezy
+ * @param {function} onSettings - Handler du bouton Paramètres
  */
-function ProfileHeader({ user, isOwn = true, isFollowing = false, onFollow, onEdit, onNewPost }) {
+function ProfileHeader({ user, isOwn = true, isFollowing = false, onFollow, onEdit, onNewPost, onSettings }) {
     const {
         username    = 'utilisateur',
         bio         = '',
@@ -56,6 +57,15 @@ function ProfileHeader({ user, isOwn = true, isFollowing = false, onFollow, onEd
             <div className={styles.actions}>
                 {isOwn ? (
                     <>
+                        <button
+                            id="btn-settings"
+                            className={styles.btnSecondary}
+                            onClick={onSettings}
+                            aria-label="Paramètres"
+                            style={{ padding: '0 12px' }}
+                        >
+                            <Settings size={18} strokeWidth={2} />
+                        </button>
                         <button
                             id="btn-edit-profile"
                             className={styles.btnSecondary}
