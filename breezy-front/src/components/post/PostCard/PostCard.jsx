@@ -479,7 +479,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                     </header>
 
                                     {reply.reply_to && (
-                                        <div className={styles.replyToCommentBadge} onClick={(e) => e.stopPropagation()}>
+                                        <div className={styles.replyToCommentBadge} onClick={(e) => e.stopPropagation()} role="presentation">
                                             En réponse à{' '}
                                             <Link to={`/profile/${reply.reply_to.author.username}`} className={styles.replyLink}>
                                                 <strong>@{reply.reply_to.author.username}</strong>
@@ -489,7 +489,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
                                     <p className={styles.replyText}>{reply.content}</p>
 
-                                    <div className={styles.replyActions} onClick={(e) => e.stopPropagation()}>
+                                    <div className={styles.replyActions} onClick={(e) => e.stopPropagation()} role="presentation">
                                         <button
                                             type="button"
                                             className={[styles.replyActionBtn, reply.liked ? styles.likedBtn : ''].join(' ')}
@@ -534,7 +534,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
                                     {/* Formulaire de réponse imbriqué (s'affiche directement sous le commentaire auquel on répond) */}
                                     {isTargetOfReply && (
-                                        <div className={styles.replyInlineFormWrapper} onClick={(e) => e.stopPropagation()}>
+                                        <div className={styles.replyInlineFormWrapper} onClick={(e) => e.stopPropagation()} role="presentation">
                                             {renderCommentForm()}
                                         </div>
                                     )}
@@ -559,7 +559,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                 }
 
                 return (
-                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')} onClick={(e) => e.stopPropagation()}>
+                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')} onClick={(e) => e.stopPropagation()} role="presentation">
                         
                         {/* Formulaire de commentaire sous le post (affiché uniquement s'il n'y a pas de réponse à un commentaire en cours) */}
                         {!replyingTo && renderCommentForm()}
@@ -594,10 +594,12 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                     aria-modal="true" 
                     aria-label={`Murmurer à @${author.username}`}
                     onClick={() => setShowWhisper(false)}
+                    onKeyDown={(e) => { if (e.key === 'Escape') setShowWhisper(false) }}
                 >
                     <div 
                         className={[styles.whisperModal, 'anim-fade-up'].join(' ')}
                         onClick={(e) => e.stopPropagation()}
+                        role="presentation"
                     >
                         <header className={styles.modalHeader}>
                             <div className={styles.modalTitleGroup}>

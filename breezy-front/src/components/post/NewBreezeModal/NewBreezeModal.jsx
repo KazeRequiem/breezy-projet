@@ -78,10 +78,12 @@ function NewBreezeModal({ isOpen, onClose, onPublish }) {
             aria-modal="true" 
             aria-label="Écrire un nouveau Breeze"
             onClick={handleClose}
+            onKeyDown={(e) => { if (e.key === 'Escape') handleClose() }}
         >
             <div 
                 className={[styles.modal, 'anim-fade-up'].join(' ')}
                 onClick={(e) => e.stopPropagation()}
+                role="presentation"
             >
                 <header className={styles.header}>
                     <div className={styles.titleGroup}>
