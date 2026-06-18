@@ -12,6 +12,8 @@ import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal
 import { useAuth } from '../../contexts/AuthContext'
 import styles from './ProfilePage.module.css'
 
+import { USE_MOCK, getMockUser as mockGetMockUser } from '../../services/mockData'
+
 // Helper pour extraire les hashtags d'un message
 function parseHashtags(text) {
     const regex = /#(\w+)/g
@@ -25,7 +27,12 @@ function parseHashtags(text) {
 
 // TODO : remplacer par un appel API GET /api/users/:username
 // (profils et posts chargés depuis la base de données)
-const getMockUser = () => null
+const getMockUser = (username) => {
+    if (USE_MOCK) {
+        return mockGetMockUser(username)
+    }
+    return null
+}
 
 /**
  * ProfilePage : Page de profil utilisateur (Fx4, Fx10, Fx11).
@@ -38,7 +45,7 @@ function ProfilePage() {
     const { user } = useAuth()
     const currentLoggedUser = user?.username ?? null
 
-    const profileUser = getMockUser()
+    const profileUser = getMockUser(username || currentLoggedUser)
 
     // Posts dérivés directement depuis profileUser (pas de state redondant)
     const userPosts = profileUser ? profileUser.posts : []

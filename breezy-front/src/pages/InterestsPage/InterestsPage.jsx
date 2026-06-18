@@ -15,8 +15,10 @@ const AVAILABLE_TAGS = [
     'Mobile', 'Feedback', 'Glass', 'Vite', 'Nature',
 ]
 
+import { USE_MOCK, DEMO_POSTS } from '../../services/mockData'
+
 // TODO : remplacer par un appel API GET /api/messages?tags=...  (fil par centre d'intérêt)
-const INTERESTS_POSTS = []
+const INTERESTS_POSTS = USE_MOCK ? DEMO_POSTS : []
 
 const getRepliesForPost = (postId) => {
     const direct = INTERESTS_POSTS.filter(post => post.reply_to !== null && post.reply_to.id_message === postId)

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus } from 'lucide-react'
 import PostCard        from '../PostCard/PostCard'
 import NewBreezeModal  from '../NewBreezeModal/NewBreezeModal'
 import { useAuth } from '../../../contexts/AuthContext'
+import { USE_MOCK, DEMO_POSTS } from '../../../services/mockData'
 import styles from './Feed.module.css'
 
 // Helper pour extraire les hashtags d'un message
@@ -28,23 +29,40 @@ const TRENDING_TAGS = ['#Breezy', '#UIDesign', '#WebDev', '#React', '#FrontEnd',
 function Feed() {
     const { user } = useAuth()
     // TODO: remplacer par un appel API GET /api/messages (fil chronologique)
-    const [posts, setPosts] = useState([])
+    const [posts, setPosts] = useState(USE_MOCK ? DEMO_POSTS : [])
     const [isComposerOpen, setIsComposerOpen] = useState(false)
 
     const rootPosts = posts.filter(post => post.reply_to === null)
 
-    const getRepliesForPost = (postId) => {
-        const direct = posts.filter(post => post.reply_to !== null && post.reply_to.id_message === postId)
-        const all = [...direct]
-        let queue = [...direct]
-        while (queue.length > 0) {
-            const current = queue.shift()
-            const children = posts.filter(post => post.reply_to !== null && post.reply_to.id_message === current.id_message)
-            all.push(...children)
-            queue.push(...children)
+    // Pré-calcul de la map de replies : O(n) au lieu d'un BFS O(n²) par post
+    const repliesMap = useMemo(() => {
+        const map = new Map()
+        for (const post of posts) {
+            if (post.reply_to !== null) {
+                // Trouver le post racine via remontée de la chaîne
+                let rootId = post.reply_to.id_message
+                // On stocke les replies sous l'ID parent direct
+                if (!map.has(rootId)) map.set(rootId, [])
+                map.get(rootId).push(post)
+            }
         }
-        return all
-    }
+        // Pour chaque post racine, collecter récursivement toutes les replies
+        const fullMap = new Map()
+        for (const root of posts.filter(p => p.reply_to === null)) {
+            const all = []
+            const queue = [root.id_message]
+            while (queue.length > 0) {
+                const parentId = queue.shift()
+                const children = map.get(parentId) || []
+                for (const child of children) {
+                    all.push(child)
+                    queue.push(child.id_message)
+                }
+            }
+            fullMap.set(root.id_message, all)
+        }
+        return fullMap
+    }, [posts])
 
     const handlePublish = (content, media = null) => {
         if (!user) return
@@ -92,8 +110,8 @@ function Feed() {
                     <PostCard
                         key={post.id_message}
                         post={post}
-                        replies={getRepliesForPost(post.id_message)}
-                        animDelay={i > 0 ? `anim-delay-${i}` : ''}
+                        replies={repliesMap.get(post.id_message) || []}
+                        animDelay={i > 0 && i <= 4 ? `anim-delay-${i}` : ''}
                     />
                 ))}
             </div>

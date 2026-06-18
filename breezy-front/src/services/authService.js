@@ -34,11 +34,16 @@ async function apiFetch(path, options = {}) {
     return data
 }
 
+import { USE_MOCK, mockLogin, mockRegister } from './mockData'
+
 /**
  * login() : Authentifie un utilisateur.
  * @returns {Promise<{ token: string, user: { id_user: number, username: string, email: string, role: string } }>}
  */
 export async function login(email, password) {
+    if (USE_MOCK) {
+        return mockLogin(email, password)
+    }
     return apiFetch('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
@@ -50,6 +55,9 @@ export async function login(email, password) {
  * @returns {Promise<{ id_user: number, username: string, email: string, role: string }>}
  */
 export async function register(username, email, password, biography = null) {
+    if (USE_MOCK) {
+        return mockRegister(username, email, password, biography)
+    }
     return apiFetch('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ username, email, password, biography }),

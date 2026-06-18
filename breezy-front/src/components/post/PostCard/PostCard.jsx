@@ -60,6 +60,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         setPrevPostId(post.id_message)
         setLocalReplies(replies)
         setRepliesCount(replies.length || replies_count)
+        setVisibleRepliesCount(2)
         setExpandedComments({})
     }
 
@@ -120,13 +121,13 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         e.preventDefault()
         if (!newCommentText.trim()) return
 
-        // ID unique généré via un compteur ref (jamais appelé pendant le rendu)
-        const commentId = ++commentIdRef.current
+        // ID unique sûr pour éviter tout conflit de clés
+        const commentId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
         const newComment = {
             id_message: commentId,
             content: newCommentText,
             date_publication: new Date().toISOString(),
-            author: { id_user: 1, username: currentLoggedUser, profile_picture: null },
+            author: { id_user: user?.id_user ?? 1, username: currentLoggedUser || 'anonyme', profile_picture: null },
             likes_count: 0,
             liked: false,
             reply_to: replyingTo ? { id_message: replyingTo.id_message, author: { username: replyingTo.username } } : null
@@ -134,12 +135,25 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
         setLocalReplies(prev => [...prev, newComment])
         setRepliesCount(prev => prev + 1)
+        
+        if (replyingTo) {
+            // Déplier automatiquement le commentaire parent pour voir la réponse
+            setExpandedComments(prev => ({
+                ...prev,
+                [replyingTo.id_message]: true
+            }))
+        } else {
+            // Afficher tous les commentaires pour que le nouveau commentaire tout en bas soit visible
+            const currentRootCount = localReplies.filter(r => !r.reply_to || r.reply_to.id_message === post.id_message).length
+            setVisibleRepliesCount(currentRootCount + 1)
+        }
+
         setNewCommentText('')
         setReplyingTo(null)
         showToast('Commentaire ajouté ! 🍃')
     }
 
-    const commentIdRef = useRef(0) // compteur d'IDs locaux pour les nouveaux commentaires
+    const commentIdRef = useRef(0) // conservé pour compatibilité de structure
     const menuRef = useRef(null)
 
 
