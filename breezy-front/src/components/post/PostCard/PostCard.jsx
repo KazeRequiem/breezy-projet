@@ -60,6 +60,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         setPrevPostId(post.id_message)
         setLocalReplies(replies)
         setRepliesCount(replies.length || replies_count)
+        setVisibleRepliesCount(2)
         setExpandedComments({})
     }
 
@@ -120,13 +121,13 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         e.preventDefault()
         if (!newCommentText.trim()) return
 
-        // ID unique généré via un compteur ref (jamais appelé pendant le rendu)
-        const commentId = ++commentIdRef.current
+        // ID unique pour éviter tout conflit de clés
+        const commentId = crypto.randomUUID()
         const newComment = {
             id_message: commentId,
             content: newCommentText,
             date_publication: new Date().toISOString(),
-            author: { id_user: 1, username: currentLoggedUser, profile_picture: null },
+            author: { id_user: user?.id_user ?? 1, username: currentLoggedUser || 'anonyme', profile_picture: null },
             likes_count: 0,
             liked: false,
             reply_to: replyingTo ? { id_message: replyingTo.id_message, author: { username: replyingTo.username } } : null
@@ -134,12 +135,24 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
         setLocalReplies(prev => [...prev, newComment])
         setRepliesCount(prev => prev + 1)
+        
+        if (replyingTo) {
+            // Déplier automatiquement le commentaire parent pour voir la réponse
+            setExpandedComments(prev => ({
+                ...prev,
+                [replyingTo.id_message]: true
+            }))
+        } else {
+            // Afficher tous les commentaires pour que le nouveau commentaire tout en bas soit visible
+            const currentRootCount = localReplies.filter(r => !r.reply_to || r.reply_to.id_message === post.id_message).length
+            setVisibleRepliesCount(currentRootCount + 1)
+        }
+
         setNewCommentText('')
         setReplyingTo(null)
         showToast('Commentaire ajouté ! 🍃')
     }
 
-    const commentIdRef = useRef(0) // compteur d'IDs locaux pour les nouveaux commentaires
     const menuRef = useRef(null)
 
 
@@ -465,7 +478,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                     </header>
 
                                     {reply.reply_to && (
-                                        <div className={styles.replyToCommentBadge} onClick={(e) => e.stopPropagation()}>
+                                        <div className={styles.replyToCommentBadge} onClick={(e) => e.stopPropagation()} role="presentation">
                                             En réponse à{' '}
                                             <Link to={`/profile/${reply.reply_to.author.username}`} className={styles.replyLink}>
                                                 <strong>@{reply.reply_to.author.username}</strong>
@@ -475,7 +488,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
                                     <p className={styles.replyText}>{reply.content}</p>
 
-                                    <div className={styles.replyActions} onClick={(e) => e.stopPropagation()}>
+                                    <div className={styles.replyActions} onClick={(e) => e.stopPropagation()} role="presentation">
                                         <button
                                             type="button"
                                             className={[styles.replyActionBtn, reply.liked ? styles.likedBtn : ''].join(' ')}
@@ -520,7 +533,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
                                     {/* Formulaire de réponse imbriqué (s'affiche directement sous le commentaire auquel on répond) */}
                                     {isTargetOfReply && (
-                                        <div className={styles.replyInlineFormWrapper} onClick={(e) => e.stopPropagation()}>
+                                        <div className={styles.replyInlineFormWrapper} onClick={(e) => e.stopPropagation()} role="presentation">
                                             {renderCommentForm()}
                                         </div>
                                     )}
@@ -545,7 +558,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                 }
 
                 return (
-                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')} onClick={(e) => e.stopPropagation()}>
+                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')} onClick={(e) => e.stopPropagation()} role="presentation">
                         
                         {/* Formulaire de commentaire sous le post (affiché uniquement s'il n'y a pas de réponse à un commentaire en cours) */}
                         {!replyingTo && renderCommentForm()}
@@ -580,10 +593,12 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                     aria-modal="true" 
                     aria-label={`Murmurer à @${author.username}`}
                     onClick={() => setShowWhisper(false)}
+                    onKeyDown={(e) => { if (e.key === 'Escape') setShowWhisper(false) }}
                 >
                     <div 
                         className={[styles.whisperModal, 'anim-fade-up'].join(' ')}
                         onClick={(e) => e.stopPropagation()}
+                        role="presentation"
                     >
                         <header className={styles.modalHeader}>
                             <div className={styles.modalTitleGroup}>

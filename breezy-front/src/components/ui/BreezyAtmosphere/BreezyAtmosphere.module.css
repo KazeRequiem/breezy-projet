@@ -6,6 +6,7 @@
     z-index: 1;
     pointer-events: none;
     overflow: hidden;
+    contain: layout style;
 }
 
 /* Les bulles de couleur floues qui flottent doucement */
@@ -13,8 +14,7 @@
     position: absolute;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.16);
-    filter: blur(50px);
-    will-change: transform;
+    filter: blur(30px);
 }
 
 .halo1 {

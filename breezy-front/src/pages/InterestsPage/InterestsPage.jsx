@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ChevronRight, ArrowLeft, Compass, Tag, Plus, Check, Settings, X } from 'lucide-react'
 import TopBar          from '../../components/layout/TopBar/TopBar'
 import BottomNav        from '../../components/layout/BottomNav/BottomNav'
@@ -15,21 +15,10 @@ const AVAILABLE_TAGS = [
     'Mobile', 'Feedback', 'Glass', 'Vite', 'Nature',
 ]
 
-// TODO : remplacer par un appel API GET /api/messages?tags=...  (fil par centre d'intérêt)
-const INTERESTS_POSTS = []
+import { USE_MOCK, DEMO_POSTS } from '../../services/mockData'
 
-const getRepliesForPost = (postId) => {
-    const direct = INTERESTS_POSTS.filter(post => post.reply_to !== null && post.reply_to.id_message === postId)
-    const all = [...direct]
-    let queue = [...direct]
-    while (queue.length > 0) {
-        const current = queue.shift()
-        const children = INTERESTS_POSTS.filter(post => post.reply_to !== null && post.reply_to.id_message === current.id_message)
-        all.push(...children)
-        queue.push(...children)
-    }
-    return all
-}
+// Posts pour la page Intérêts — alimenté par les mock data ou vide en attendant l'API
+const INTERESTS_POSTS = USE_MOCK ? DEMO_POSTS : []
 
 // Lecture initiale du sessionStorage (lazy initializer, exécuté une seule fois)
 // sessionStorage préféré à localStorage : effacé à la fermeture de l'onglet
@@ -53,6 +42,33 @@ function InterestsPage() {
     const [selectedTags, setSelectedTags] = useState(loadInitialTags)
     const [focusTag, setFocusTag] = useState(null)
     const [showManageDrawer, setShowManageDrawer] = useState(false)
+
+    // Pré-calcul de la map de replies (même pattern optimisé que Feed.jsx)
+    const repliesMap = useMemo(() => {
+        const map = new Map()
+        for (const post of INTERESTS_POSTS) {
+            if (post.reply_to !== null) {
+                const parentId = post.reply_to.id_message
+                if (!map.has(parentId)) map.set(parentId, [])
+                map.get(parentId).push(post)
+            }
+        }
+        const fullMap = new Map()
+        for (const root of INTERESTS_POSTS.filter(p => p.reply_to === null)) {
+            const all = []
+            const queue = [root.id_message]
+            while (queue.length > 0) {
+                const parentId = queue.shift()
+                const children = map.get(parentId) || []
+                for (const child of children) {
+                    all.push(child)
+                    queue.push(child.id_message)
+                }
+            }
+            fullMap.set(root.id_message, all)
+        }
+        return fullMap
+    }, [])
 
     // Filtre les posts associés à un tag (sans sensible à la casse) et exclut les réponses
     const getPostsForTag = (tag) => {
@@ -110,7 +126,7 @@ function InterestsPage() {
                                         <PostCard
                                             key={post.id_message}
                                             post={post}
-                                            replies={getRepliesForPost(post.id_message)}
+                                            replies={repliesMap.get(post.id_message) || []}
                                         />
                                     ))
                                 ) : (
@@ -146,6 +162,7 @@ function InterestsPage() {
                                             tag={tag}
                                             posts={getPostsForTag(tag)}
                                             onVoirPlus={setFocusTag}
+                                            repliesMap={repliesMap}
                                         />
                                     ))}
                                 </div>
@@ -182,7 +199,7 @@ function InterestsPage() {
 }
 
 // Une ligne de tag (défilement horizontal + bouton d'accès direct)
-function TagRow({ tag, posts, onVoirPlus }) {
+function TagRow({ tag, posts, onVoirPlus, repliesMap }) {
     return (
         <section className={styles.tagSection} aria-label={`Tag ${tag}`}>
             <header className={styles.sectionHeader}>
@@ -204,7 +221,7 @@ function TagRow({ tag, posts, onVoirPlus }) {
                             <PostCard
                                 post={post}
                                 compact={true}
-                                replies={getRepliesForPost(post.id_message)}
+                                replies={repliesMap.get(post.id_message) || []}
                             />
                         </div>
                     ))
@@ -245,8 +262,8 @@ function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
     )
 
     return (
-        <div className={styles.drawerOverlay} onClick={handleClose} role="dialog" aria-modal="true">
-            <div className={styles.drawerCard} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.drawerOverlay} onClick={handleClose} onKeyDown={(e) => { if (e.key === 'Escape') handleClose() }} role="dialog" aria-modal="true">
+            <div className={styles.drawerCard} onClick={(e) => e.stopPropagation()} role="presentation">
                 <header className={styles.drawerHeader}>
                     <h2 className={styles.drawerTitle}>Gérer mes centres d'intérêts</h2>
                     <button className={styles.closeBtn} onClick={handleClose} aria-label="Fermer le panneau">

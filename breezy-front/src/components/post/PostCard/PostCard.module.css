@@ -5,9 +5,7 @@
     border-radius: 20px;
     opacity: 0; /* Géré par l'animation fadeInUp au chargement */
 
-    background: rgba(255, 255, 255, 0.62);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.82);
     border: 1px solid rgba(255, 255, 255, 0.78);
     box-shadow:
         0 4px 20px rgba(120, 100, 160, 0.10),
@@ -282,9 +280,7 @@
     margin-top: 4px;
     z-index: 100;
     min-width: 150px;
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.90);
     border: 1px solid rgba(255, 255, 255, 0.65);
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(120, 100, 160, 0.12);
@@ -327,9 +323,8 @@
     width: 100%;
     padding: 14px 16px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.55);
     border: 1px dashed rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(6px);
     text-align: center;
     color: var(--text-muted);
     font-size: 0.85rem;
@@ -487,8 +482,7 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
-    background: rgba(40, 40, 45, 0.88);
-    backdrop-filter: blur(8px);
+    background: rgba(40, 40, 45, 0.95);
     color: white;
     padding: 10px 20px;
     border-radius: 999px;
