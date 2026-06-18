@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-// Liste des variables requises
+//Required variables
 const required = ["MONGO_URI", "VAULT_ADDR", "VAULT_TOKEN", "APP_PORT"];
 
 const missing = required.filter((key) => !process.env[key]);
