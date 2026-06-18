@@ -42,9 +42,11 @@ describe('RegisterPage', () => {
         expect(screen.getByRole('heading', { name: /Créer un compte/i })).toBeInTheDocument()
         expect(screen.getByLabelText(/Nom d'utilisateur/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/Adresse e-mail/i)).toBeInTheDocument()
-        expect(screen.getByLabelText(/Mot de passe/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/^Mot de passe$/i)).toBeInTheDocument()
         expect(screen.getByLabelText(/Confirmer/i)).toBeInTheDocument()
-        expect(screen.getByLabelText(/En cochant cette case, j'accepte/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/J'accepte les Conditions d'Utilisation/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/J'accepte la Politique de confidentialité/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/J'accepte l'utilisation des cookies/i)).toBeInTheDocument()
 
         const submitBtn = screen.getByRole('button', { name: /Continuer/i })
         fireEvent.click(submitBtn)
@@ -70,9 +72,10 @@ describe('RegisterPage', () => {
         // Étape 1
         fireEvent.change(screen.getByLabelText(/Nom d'utilisateur/i), { target: { value: 'testuser' } })
         fireEvent.change(screen.getByLabelText(/Adresse e-mail/i), { target: { value: 'test@exemple.com' } })
-        fireEvent.change(screen.getByLabelText(/Mot de passe/i), { target: { value: 'password123' } })
+        fireEvent.change(screen.getByLabelText(/^Mot de passe$/i), { target: { value: 'password123' } })
         fireEvent.change(screen.getByLabelText(/Confirmer/i), { target: { value: 'password123' } })
-        fireEvent.click(screen.getByLabelText(/En cochant cette case, j'accepte/i))
+        fireEvent.click(screen.getByLabelText(/J'accepte les Conditions d'Utilisation/i))
+        fireEvent.click(screen.getByLabelText(/J'accepte la Politique de confidentialité/i))
 
         fireEvent.click(screen.getByRole('button', { name: /Continuer/i }))
 

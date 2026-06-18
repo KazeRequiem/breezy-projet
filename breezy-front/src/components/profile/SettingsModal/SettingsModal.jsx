@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PropTypes from 'prop-types'
 import { X, LogOut, Eye, EyeOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -44,8 +45,20 @@ function SettingsModal({ isOpen, onClose }) {
     }
 
     return (
-        <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-label="Paramètres">
-            <div className={[styles.modal, 'anim-scale-in'].join(' ')} onClick={(e) => e.stopPropagation()}>
+        <dialog 
+            className={styles.overlay} 
+            open={isOpen} 
+            onClick={onClose} 
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
+            aria-label="Paramètres"
+            style={{ border: 'none', padding: 0, background: 'transparent', width: '100%', height: '100%', margin: 0, position: 'fixed', top: 0, left: 0, zIndex: 9999 }}
+        >
+            <div 
+                className={[styles.modal, 'anim-scale-in'].join(' ')} 
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                role="document"
+            >
                 <header className={styles.header}>
                     <h2 className={styles.title}>Paramètres</h2>
                     <button className={styles.closeBtn} onClick={onClose} aria-label="Fermer les paramètres">
@@ -133,8 +146,13 @@ function SettingsModal({ isOpen, onClose }) {
                     </section>
                 </div>
             </div>
-        </div>
+        </dialog>
     )
+}
+
+SettingsModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired
 }
 
 export default SettingsModal

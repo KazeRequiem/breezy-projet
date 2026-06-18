@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import { Edit3, Plus, UserCheck, Settings } from 'lucide-react'
 import styles from './ProfileHeader.module.css'
 
@@ -115,6 +116,21 @@ function shiftColor(hex) {
     } catch {
         return '#d07070'
     }
+}
+
+ProfileHeader.propTypes = {
+    user: PropTypes.shape({
+        username: PropTypes.string,
+        bio: PropTypes.string,
+        location: PropTypes.string,
+        banner_color: PropTypes.string
+    }).isRequired,
+    isOwn: PropTypes.bool,
+    isFollowing: PropTypes.bool,
+    onFollow: PropTypes.func,
+    onEdit: PropTypes.func,
+    onNewPost: PropTypes.func,
+    onSettings: PropTypes.func
 }
 
 export default ProfileHeader

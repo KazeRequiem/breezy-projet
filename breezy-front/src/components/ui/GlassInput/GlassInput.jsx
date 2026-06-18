@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types'
+
 /**
  * GlassInput : Champ de formulaire au style glassmorphism.
  *
@@ -57,6 +59,17 @@ const inputFocused = {
     background: 'rgba(255,255,255,0.72)',
     borderColor: 'rgba(59,140,240,0.50)',
     boxShadow: '0 0 0 3px rgba(59,140,240,0.15)',
+}
+
+GlassInput.propTypes = {
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    type: PropTypes.string,
+    placeholder: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired,
+    required: PropTypes.bool,
+    rightElement: PropTypes.node
 }
 
 export default GlassInput
