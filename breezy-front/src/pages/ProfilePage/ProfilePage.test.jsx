@@ -2,10 +2,15 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import ProfilePage from './ProfilePage'
-import { AuthProvider } from '../../contexts/AuthContext'
+import { vi } from 'vitest'
+
+vi.mock('../../contexts/AuthContext', () => ({
+    useAuth: vi.fn(() => ({ user: { username: 'baptistenoisette' } })),
+    AuthProvider: ({ children }) => <>{children}</>
+}))
 
 describe('ProfilePage', () => {
-    it.skip('affiche le profil de l\'utilisateur connecté par défaut', () => {
+    it('affiche le profil de l\'utilisateur connecté par défaut', () => {
         render(
             <MemoryRouter initialEntries={['/profile']}>
                 <Routes>
@@ -20,7 +25,7 @@ describe('ProfilePage', () => {
         expect(screen.getByText(/Paris, France/i)).toBeInTheDocument()
 
         // Devrait afficher ses stats
-        expect(screen.getByRole('button', { name: '3 Breezes' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: '6 Breezes' })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: '286 Abonnés' })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: '379 Suivis' })).toBeInTheDocument()
 
@@ -28,7 +33,7 @@ describe('ProfilePage', () => {
         expect(screen.getByRole('button', { name: /Nouveau Breezy/i })).toBeInTheDocument()
     })
 
-    it.skip('affiche le profil d\'un autre utilisateur et permet de le suivre', () => {
+    it('affiche le profil d\'un autre utilisateur et permet de le suivre', () => {
         render(
             <MemoryRouter initialEntries={['/profile/camille_lrt']}>
                 <Routes>
@@ -58,13 +63,11 @@ describe('ProfilePage', () => {
 
     it('affiche un message d\'erreur si le profil n\'existe pas', () => {
         render(
-            <AuthProvider>
-                <MemoryRouter initialEntries={['/profile/inconnu']}>
-                    <Routes>
-                        <Route path="/profile/:username" element={<ProfilePage />} />
-                    </Routes>
-                </MemoryRouter>
-            </AuthProvider>
+            <MemoryRouter initialEntries={['/profile/inconnu']}>
+                <Routes>
+                    <Route path="/profile/:username" element={<ProfilePage />} />
+                </Routes>
+            </MemoryRouter>
         )
 
         expect(screen.getByRole('heading', { name: /Profil introuvable/i })).toBeInTheDocument()

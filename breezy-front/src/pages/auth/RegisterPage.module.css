@@ -226,6 +226,12 @@
     color: #fff !important;
 }
 
+.tagOptionSelected:hover {
+    background: #2b6fd6; /* Un bleu un peu plus foncé au survol (brand-dark) */
+    border-color: #2b6fd6;
+    color: #fff !important;
+}
+
 .tagsHint {
     font-size: 0.72rem;
     color: var(--text-muted, #9090b0);

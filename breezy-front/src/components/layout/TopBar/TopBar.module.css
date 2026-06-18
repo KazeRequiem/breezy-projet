@@ -16,35 +16,10 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.50);
 }
 
-/* Photo de profil à gauche */
-.avatarLink {
-    display: flex;
-    text-decoration: none;
-    transition: transform 150ms ease;
-}
-.avatarLink:hover {
-    transform: scale(1.08);
-}
-.avatar {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--brand, #3b8cf0) 0%, #ff8a8a 100%);
-    color: white;
-    font-weight: 700;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
 
-/* Logo centré */
+
+/* Logo aligné à gauche */
 .logoLink {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
     align-items: center;
 }

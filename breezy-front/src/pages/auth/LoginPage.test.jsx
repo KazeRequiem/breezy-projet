@@ -29,7 +29,7 @@ describe('LoginPage', () => {
         )
 
         expect(screen.getByLabelText(/Adresse e-mail/i)).toBeInTheDocument()
-        expect(screen.getByLabelText(/Mot de passe/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/^Mot de passe$/i)).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /Se connecter/i })).toBeInTheDocument()
         expect(screen.getByRole('link', { name: /S'inscrire/i })).toBeInTheDocument()
     })
@@ -50,7 +50,7 @@ describe('LoginPage', () => {
         )
 
         const emailInput = screen.getByLabelText(/Adresse e-mail/i)
-        const passwordInput = screen.getByLabelText(/Mot de passe/i)
+        const passwordInput = screen.getByLabelText(/^Mot de passe$/i)
         const submitBtn = screen.getByRole('button', { name: /Se connecter/i })
 
         fireEvent.change(emailInput, { target: { value: 'jean@exemple.com' } })

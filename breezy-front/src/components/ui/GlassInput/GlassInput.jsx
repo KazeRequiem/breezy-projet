@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types'
+
 /**
  * GlassInput : Champ de formulaire au style glassmorphism.
  *
@@ -9,21 +11,28 @@
  * @param {function} onChange    Handler de changement
  * @param {boolean}  [required]  Champ obligatoire
  */
-function GlassInput({ id, label, type = 'text', placeholder, value, onChange, required = false }) {
+function GlassInput({ id, label, type = 'text', placeholder, value, onChange, required = false, rightElement }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label htmlFor={id} style={labelStyle}>{label}</label>
-            <input
-                id={id}
-                type={type}
-                placeholder={placeholder}
-                value={value}
-                onChange={onChange}
-                required={required}
-                style={inputBase}
-                onFocus={e  => Object.assign(e.target.style, inputFocused)}
-                onBlur={e   => Object.assign(e.target.style, inputBase)}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                <input
+                    id={id}
+                    type={type}
+                    placeholder={placeholder}
+                    value={value}
+                    onChange={onChange}
+                    required={required}
+                    style={{ ...inputBase, paddingRight: rightElement ? '40px' : '16px' }}
+                    onFocus={e  => Object.assign(e.target.style, { ...inputFocused, paddingRight: rightElement ? '40px' : '16px' })}
+                    onBlur={e   => Object.assign(e.target.style, { ...inputBase, paddingRight: rightElement ? '40px' : '16px' })}
+                />
+                {rightElement && (
+                    <div style={{ position: 'absolute', right: '12px', display: 'flex', alignItems: 'center' }}>
+                        {rightElement}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -50,6 +59,17 @@ const inputFocused = {
     background: 'rgba(255,255,255,0.72)',
     borderColor: 'rgba(59,140,240,0.50)',
     boxShadow: '0 0 0 3px rgba(59,140,240,0.15)',
+}
+
+GlassInput.propTypes = {
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    type: PropTypes.string,
+    placeholder: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired,
+    required: PropTypes.bool,
+    rightElement: PropTypes.node
 }
 
 export default GlassInput

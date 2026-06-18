@@ -15,10 +15,10 @@ function ErrorPage({ code = 404 }) {
                 <div className={styles.windLine} aria-hidden="true" />
                 <button
                     className={styles.btnSecondary}
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate('/')}
                     id={`btn-go-back-${code}`}
                 >
-                    ← Retour
+                    ← Retour à l'accueil
                 </button>
             </main>
         </div>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Compass, Search, Bell, ShieldCheck } from 'lucide-react'
+import { Home, Compass, Search, Bell, ShieldCheck, User } from 'lucide-react'
 import logoBreezy from '../../../assets/logo-breezy.png'
 import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
@@ -22,14 +22,25 @@ function BottomNav() {
     // États recherche
     const [searchQuery, setSearchQuery] = useState('')
     const [showSuggestions, setShowSuggestions] = useState(false)
+    const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
     const searchContainerRef = useRef(null)
+    const mobileSearchInputRef = useRef(null)
 
-    // Fermer les suggestions lors d'un clic extérieur
+    // Focus automatique quand la recherche mobile s'ouvre
+    useEffect(() => {
+        if (mobileSearchOpen && mobileSearchInputRef.current) {
+            mobileSearchInputRef.current.focus()
+        }
+    }, [mobileSearchOpen])
+
+    // Fermer la recherche et les suggestions lors d'un clic extérieur
     useEffect(() => {
         function handleClickOutside(event) {
             if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
                 setShowSuggestions(false)
+                setMobileSearchOpen(false)
+                setSearchQuery('')
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
@@ -44,7 +55,14 @@ function BottomNav() {
     const handleSelectUser = (userUsername) => {
         setSearchQuery('')
         setShowSuggestions(false)
+        setMobileSearchOpen(false)
         navigate(`/profile/${userUsername}`)
+    }
+
+    const handleCloseMobileSearch = () => {
+        setMobileSearchOpen(false)
+        setSearchQuery('')
+        setShowSuggestions(false)
     }
 
     // La recherche utilise une liste statique pour la démo.
@@ -60,43 +78,77 @@ function BottomNav() {
 
     return (
         <div ref={searchContainerRef}>
+            {/* Suggestions mobiles (au-dessus de la bottomNav) */}
+            {mobileSearchOpen && showSuggestions && suggestions.length > 0 && (
+                <div className={[styles.suggestionsMobile, 'anim-fade-up'].join(' ')}>
+                    {suggestions.map(u => (
+                        <button
+                            key={u.username}
+                            className={styles.suggestionItem}
+                            onClick={() => handleSelectUser(u.username)}
+                        >
+                            <div className={styles.suggestionAvatar}>
+                                {u.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div className={styles.suggestionInfo}>
+                                <span className={styles.suggestionName}>{u.name}</span>
+                                <span className={styles.suggestionHandle}>@{u.username}</span>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
+            
             {/* Mobile : bottom bar */}
-            <nav className={styles.bottomNav} aria-label="Navigation principale">
+            <nav className={[styles.bottomNav, mobileSearchOpen ? styles.bottomNavExpanded : ''].join(' ')} aria-label="Navigation principale">
                 <NavItem path="/feed"      icon={Home}    label="Accueil"   active={pathname === '/feed'} />
                 <NavItem path="/interests" icon={Compass} label="Intérêts"  active={pathname === '/interests'} />
-                <div className={styles.searchPill} role="search">
-                    <Search size={14} color="var(--text-muted)" strokeWidth={2} />
-                    <input
-                        id="search-mobile"
-                        type="text"
-                        placeholder="Rechercher..."
-                        aria-label="Champ de recherche"
-                        value={searchQuery}
-                        onChange={handleSearchChange}
-                        onFocus={() => setShowSuggestions(true)}
-                        autoComplete="off"
-                    />
-                </div>
-
-                {/* Suggestions mobiles (au-dessus du bottomNav) */}
-                {showSuggestions && suggestions.length > 0 && (
-                    <div className={[styles.suggestionsMobile, 'anim-fade-up'].join(' ')}>
-                        {suggestions.map(u => (
-                            <button
-                                key={u.username}
-                                className={styles.suggestionItem}
-                                onClick={() => handleSelectUser(u.username)}
-                            >
-                                <div className={styles.suggestionAvatar}>
-                                    {u.username.charAt(0).toUpperCase()}
-                                </div>
-                                <div className={styles.suggestionInfo}>
-                                    <span className={styles.suggestionName}>{u.name}</span>
-                                    <span className={styles.suggestionHandle}>@{u.username}</span>
-                                </div>
-                            </button>
-                        ))}
+                
+                {/* Bouton profil (3ème position) */}
+                <Link
+                    to={username ? `/profile/${username}` : '/login'}
+                    className={styles.navItemBtn}
+                    aria-label="Mon profil"
+                    id="bottomnav-profile"
+                >
+                    <div className={styles.navAvatar} aria-hidden="true">
+                        {username ? username.charAt(0).toUpperCase() : <User size={20} strokeWidth={1.8} />}
                     </div>
+                </Link>
+
+                {/* Recherche rétractable (4ème position) */}
+                {mobileSearchOpen ? (
+                    <div className={styles.searchInputWrapper} role="search">
+                        <button 
+                            className={styles.navItemBtn} 
+                            onClick={handleCloseMobileSearch}
+                            aria-label="Fermer la recherche"
+                            type="button"
+                            style={{ width: 'auto', padding: '0 4px', color: 'var(--text-primary)' }}
+                        >
+                            <Search size={22} strokeWidth={1.8} />
+                        </button>
+                        <input
+                            ref={mobileSearchInputRef}
+                            id="search-mobile"
+                            type="text"
+                            placeholder="Rechercher..."
+                            aria-label="Champ de recherche"
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            onFocus={() => setShowSuggestions(true)}
+                            autoComplete="off"
+                        />
+                    </div>
+                ) : (
+                    <button
+                        className={styles.navItemBtn}
+                        onClick={() => setMobileSearchOpen(true)}
+                        aria-label="Rechercher"
+                        type="button"
+                    >
+                        <Search size={22} strokeWidth={1.8} />
+                    </button>
                 )}
             </nav>
 

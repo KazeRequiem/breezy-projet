@@ -1,29 +1,14 @@
 import { Link } from 'react-router-dom'
 import { Bell, ShieldCheck } from 'lucide-react'
 import logoBreezy from '../../../assets/logo-breezy.png'
-import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import styles from './TopBar.module.css'
 
 function TopBar() {
-    const { user } = useAuth()
-    const username = user?.username ?? ''
 
     return (
         <header className={styles.topbar} role="banner" aria-label="En-tête Breezy">
-            {/* Photo de profil (avatar) en haut à gauche */}
-            <Link 
-                to={username ? `/profile/${username}` : '/login'}
-                className={styles.avatarLink}
-                aria-label="Voir mon profil"
-                id="topbar-avatar"
-            >
-                <div className={styles.avatar}>
-                    {username ? username.charAt(0).toUpperCase() : '?'}
-                </div>
-            </Link>
-
-            {/* Logo centré */}
+            {/* Logo aligné à gauche maintenant que l'avatar n'est plus là */}
             <Link to="/feed" className={styles.logoLink} aria-label="Accueil Breezy">
                 <img
                     src={logoBreezy}
@@ -34,7 +19,7 @@ function TopBar() {
 
             {/* Boutons droite */}
             <div className={styles.rightActions}>
-                {/* Lien Admin — visible uniquement pour admin et moderator (UX seulement) */}
+                {/* Lien Admin visible uniquement pour admin et moderator (UX seulement) */}
                 <RequireRole allowedRoles={['admin', 'moderator']}>
                     <Link
                         to="/admin"

@@ -9,6 +9,7 @@ import ProfileHeader    from '../../components/profile/ProfileHeader/ProfileHead
 import ProfileStats     from '../../components/profile/ProfileStats/ProfileStats'
 import PostCard         from '../../components/post/PostCard/PostCard'
 import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal'
+import SettingsModal   from '../../components/profile/SettingsModal/SettingsModal'
 import { useAuth } from '../../contexts/AuthContext'
 import styles from './ProfilePage.module.css'
 
@@ -51,6 +52,7 @@ function ProfilePage() {
     const userPosts = profileUser ? profileUser.posts : []
 
     const [isComposerOpen, setIsComposerOpen] = useState(false)
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [localPosts, setLocalPosts] = useState(userPosts)
     const [breezesCount, setBreezesCount] = useState(profileUser?.breezes_count ?? 0)
     
@@ -138,6 +140,7 @@ function ProfilePage() {
                             isFollowing={isFollowing}
                             onFollow={toggleFollow}
                             onEdit={() => {}}
+                            onSettings={() => setIsSettingsOpen(true)}
                             onNewPost={() => setIsComposerOpen(true)}
                         />
 
@@ -177,6 +180,12 @@ function ProfilePage() {
                         isOpen={isComposerOpen} 
                         onClose={() => setIsComposerOpen(false)} 
                         onPublish={handlePublish} 
+                    />
+
+                    {/* Modal des paramètres (déconnexion, mot de passe) */}
+                    <SettingsModal
+                        isOpen={isSettingsOpen}
+                        onClose={() => setIsSettingsOpen(false)}
                     />
 
                 </main>
