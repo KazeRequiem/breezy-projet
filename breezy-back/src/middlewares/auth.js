@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { getJwtSecret } = require("../config/secrets");
+const { getJwtSecret } = require("../config/vault");
 
 module.exports = (req, res, next) => {
     try {
@@ -8,7 +8,7 @@ module.exports = (req, res, next) => {
             return res.status(401).json({ message: "Token manquant" });
         }
         const token = authHeader.split(" ")[1];
-        const decode = jwt.verify(token, getJwtSecret());
+        const decoded = jwt.verify(token, getJwtSecret());
         req.user = decoded;
         next();
     } catch (err) {

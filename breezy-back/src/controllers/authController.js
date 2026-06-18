@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../models");
-const { getJwtSecret } = require("../config/secrets");
+const { getJwtSecret } = require("../config/vault");
 
 const User = db.User;
 
@@ -13,7 +13,7 @@ exports.register = async (req, res) => {
             return res.status(400).json({ message: "username, email et mot de passe sont requis" });
         }
 
-        const existing = await User.findOne({ where: { email } });
+        const existing = await User.findOne({ email });
         if (existing) {
             return res.status(409).json({ message: "Cet email est déjà utilisé" });
         }
@@ -30,7 +30,7 @@ exports.register = async (req, res) => {
         });
 
         res.status(201).json({
-            id_user: user.id_user,
+            id: user._id,
             username: user.username,
             email: user.email,
             biography: user.biography,
@@ -51,18 +51,18 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "email et mot de passe sont requis" });
         }
 
-        const user = await User.findOne({ where: { email } });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({ message: "Identifiants invalides" });
         }
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) {
-            return res.status(401).json({ message: "Identifiant invalide" });
+            return res.status(401).json({ message: "Identifiants invalides" });
         }
 
         const token = jwt.sign(
-            { id_user: user.id_user, role: user.role },
+            { id: user._id, role: user.role },
             getJwtSecret(),
             { expiresIn: "24h" }
         );
@@ -70,7 +70,7 @@ exports.login = async (req, res) => {
         res.json({
             token,
             user: {
-                id_user: user.id_user,
+                id: user._id,
                 username: user.username,
                 email: user.email,
                 role: user.role,
