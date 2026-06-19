@@ -6,12 +6,13 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, maxlength: 255 },
     password: { type: String, required: true },
     biography: { type: String, maxlength: 160, default: null },
-    profile_picture: { type: String, maxlength: 255, default: null },
+    profile_picture: { type: String, default: null },
     role: {
       type: String,
       enum: ["user", "moderator", "admin"],
       default: "user",
     },
+    tags: { type: [String], default: [] },
   },
   { timestamps: true } // crée automatiquement createdAt et updatedAt
 );

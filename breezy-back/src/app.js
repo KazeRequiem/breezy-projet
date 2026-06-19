@@ -8,7 +8,7 @@ const app = express();
 app.disable("x-powered-by"); //Disable the fact that the back says Hey i turn on express bro
 
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/", (req, res) => res.json({ message: "Breezy API up" }));
 app.use("/api", require("./routes"));

@@ -3,14 +3,25 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import ProfilePage from './ProfilePage'
 import { vi } from 'vitest'
+import { getMockUser as mockGetMockUser } from '../../services/mockData'
 
 vi.mock('../../contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({ user: { username: 'baptistenoisette' } })),
     AuthProvider: ({ children }) => <>{children}</>
 }))
 
+vi.mock('../../services/userService', () => ({
+    getUserByUsername: vi.fn((username) => {
+        const user = mockGetMockUser(username)
+        if (!user) {
+            return Promise.reject(new Error('User not found'))
+        }
+        return Promise.resolve(user)
+    })
+}))
+
 describe('ProfilePage', () => {
-    it('affiche le profil de l\'utilisateur connecté par défaut', () => {
+    it('affiche le profil de l\'utilisateur connecté par défaut', async () => {
         render(
             <MemoryRouter initialEntries={['/profile']}>
                 <Routes>
@@ -20,7 +31,7 @@ describe('ProfilePage', () => {
         )
 
         // Devrait afficher les infos de baptistenoisette (par défaut)
-        expect(screen.getByRole('heading', { name: /baptistenoisette/i })).toBeInTheDocument()
+        expect(await screen.findByRole('heading', { name: /baptistenoisette/i })).toBeInTheDocument()
         expect(screen.getByText(/Dev web, café addict/i)).toBeInTheDocument()
         expect(screen.getByText(/Paris, France/i)).toBeInTheDocument()
 
@@ -33,7 +44,7 @@ describe('ProfilePage', () => {
         expect(screen.getByRole('button', { name: /Nouveau Breezy/i })).toBeInTheDocument()
     })
 
-    it('affiche le profil d\'un autre utilisateur et permet de le suivre', () => {
+    it('affiche le profil d\'un autre utilisateur et permet de le suivre', async () => {
         render(
             <MemoryRouter initialEntries={['/profile/camille_lrt']}>
                 <Routes>
@@ -43,7 +54,7 @@ describe('ProfilePage', () => {
         )
 
         // Devrait afficher les infos de camille_lrt
-        expect(screen.getByRole('heading', { name: /camille_lrt/i })).toBeInTheDocument()
+        expect(await screen.findByRole('heading', { name: /camille_lrt/i })).toBeInTheDocument()
         expect(screen.getByText(/Product Designer & passionnée/i)).toBeInTheDocument()
 
         // Bouton Suivre (car ce n'est pas son profil)
@@ -61,7 +72,7 @@ describe('ProfilePage', () => {
         expect(screen.getByRole('button', { name: '413 Abonnés' })).toBeInTheDocument()
     })
 
-    it('affiche un message d\'erreur si le profil n\'existe pas', () => {
+    it('affiche un message d\'erreur si le profil n\'existe pas', async () => {
         render(
             <MemoryRouter initialEntries={['/profile/inconnu']}>
                 <Routes>
@@ -70,7 +81,7 @@ describe('ProfilePage', () => {
             </MemoryRouter>
         )
 
-        expect(screen.getByRole('heading', { name: /Profil introuvable/i })).toBeInTheDocument()
+        expect(await screen.findByRole('heading', { name: /Profil introuvable/i })).toBeInTheDocument()
         expect(screen.getByText(/L'utilisateur/i)).toBeInTheDocument()
         expect(screen.getByText('@inconnu')).toBeInTheDocument()
         expect(screen.getByRole('link', { name: /Retourner à l'accueil/i })).toBeInTheDocument()

@@ -22,6 +22,7 @@ function ProfileHeader({ user, isOwn = true, isFollowing = false, onFollow, onEd
         bio         = '',
         location    = '',
         banner_color = '#e88a8a',
+        profile_picture = null,
     } = user
 
     // Initiale pour l'avatar par défaut
@@ -43,7 +44,10 @@ function ProfileHeader({ user, isOwn = true, isFollowing = false, onFollow, onEd
             {/* Avatar circulaire chevauchant la bannière */}
             <div className={styles.avatarRing}>
                 <div className={styles.avatar} aria-label={`Avatar de @${username}`}>
-                    {initial}
+                    {profile_picture
+                        ? <img src={profile_picture} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        : initial
+                    }
                 </div>
             </div>
 
@@ -123,7 +127,8 @@ ProfileHeader.propTypes = {
         username: PropTypes.string,
         bio: PropTypes.string,
         location: PropTypes.string,
-        banner_color: PropTypes.string
+        banner_color: PropTypes.string,
+        profile_picture: PropTypes.string
     }).isRequired,
     isOwn: PropTypes.bool,
     isFollowing: PropTypes.bool,
