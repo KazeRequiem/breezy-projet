@@ -127,7 +127,8 @@ ProfileHeader.propTypes = {
         username: PropTypes.string,
         bio: PropTypes.string,
         location: PropTypes.string,
-        banner_color: PropTypes.string
+        banner_color: PropTypes.string,
+        profile_picture: PropTypes.string
     }).isRequired,
     isOwn: PropTypes.bool,
     isFollowing: PropTypes.bool,

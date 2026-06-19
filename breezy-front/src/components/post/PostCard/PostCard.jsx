@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, X, Send, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -457,20 +458,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                     }
                                 }}
                             >
-                                <div className={depth > 0 ? styles.subReplyAvatarCol : styles.replyAvatarCol}>
-                                    <Link
-                                        to={`/profile/${reply.author.username}`}
-                                        className={depth > 0 ? styles.subReplyAvatarLink : styles.replyAvatarLink}
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <div className={depth > 0 ? styles.subReplyAvatar : styles.replyAvatar}>
-                                            {reply.author.profile_picture
-                                                ? <img src={reply.author.profile_picture} alt={reply.author.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                                                : reply.author.username.charAt(0).toUpperCase()
-                                            }
-                                        </div>
-                                    </Link>
-                                </div>
+                                <ReplyAvatar author={reply.author} depth={depth} styles={styles} />
                                 <div className={styles.replyBody}>
                                     <header className={styles.replyHeader}>
                                         <Link
@@ -482,7 +470,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                         </Link>
                                         <span className={styles.replyTime}>{formatRelativeTime(reply.date_publication)}</span>
                                     </header>
-
+ 
                                     {reply.reply_to && (
                                         <div className={styles.replyToCommentBadge} onClick={(e) => e.stopPropagation()} role="presentation">
                                             En réponse à{' '}
@@ -491,53 +479,19 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                             </Link>
                                         </div>
                                     )}
-
+ 
                                     <p className={styles.replyText}>{reply.content}</p>
-
-                                    <div className={styles.replyActions} onClick={(e) => e.stopPropagation()} role="presentation">
-                                        <button
-                                            type="button"
-                                            className={[styles.replyActionBtn, reply.liked ? styles.likedBtn : ''].join(' ')}
-                                            onClick={() => handleLikeComment(reply.id_message)}
-                                            aria-label="Liker le commentaire"
-                                        >
-                                            <Heart size={11} className={reply.liked ? styles.heartActive : ''} />
-                                            {(reply.likes_count || 0) > 0 && <span className={styles.replyActionCount}>{reply.likes_count}</span>}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.replyActionBtn}
-                                            onClick={() => setReplyingTo({ id_message: reply.id_message, username: reply.author.username })}
-                                            aria-label="Répondre au commentaire"
-                                        >
-                                            <MessageCircle size={11} />
-                                            <span>Répondre</span>
-                                        </button>
-
-                                        {/* Bouton pour afficher/masquer les réponses enfants */}
-                                        {children.length > 0 && (
-                                            <button
-                                                type="button"
-                                                className={styles.toggleSubRepliesBtn}
-                                                onClick={() => toggleExpandComment(reply.id_message)}
-                                                aria-label={isExpanded ? "Masquer les réponses" : `Afficher les réponses (${children.length})`}
-                                            >
-                                                {isExpanded ? (
-                                                    <>
-                                                        <ChevronUp size={11} />
-                                                        <span>Masquer</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ChevronDown size={11} />
-                                                        <span>Voir ({children.length})</span>
-                                                    </>
-                                                )}
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Formulaire de réponse imbriqué (s'affiche directement sous le commentaire auquel on répond) */}
+ 
+                                    <ReplyActions
+                                        reply={reply}
+                                        childrenCount={children.length}
+                                        isExpanded={isExpanded}
+                                        onLike={() => handleLikeComment(reply.id_message)}
+                                        onReply={() => setReplyingTo({ id_message: reply.id_message, username: reply.author.username })}
+                                        onToggleExpand={() => toggleExpandComment(reply.id_message)}
+                                        styles={styles}
+                                    />
+ 
                                     {isTargetOfReply && (
                                         <div className={styles.replyInlineFormWrapper} onClick={(e) => e.stopPropagation()} role="presentation">
                                             {renderCommentForm()}
@@ -545,7 +499,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                     )}
                                 </div>
                             </div>
-
+ 
                             {/* Rendu récursif des enfants si déplié (indents successives via CSS) */}
                             {children.length > 0 && isExpanded && (
                                 <div
@@ -671,5 +625,132 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         </>
     )
 }
-
+ 
+function ReplyAvatar({ author, depth, styles }) {
+    const initial = author.username.charAt(0).toUpperCase()
+    return (
+        <div className={depth > 0 ? styles.subReplyAvatarCol : styles.replyAvatarCol}>
+            <Link
+                to={`/profile/${author.username}`}
+                className={depth > 0 ? styles.subReplyAvatarLink : styles.replyAvatarLink}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className={depth > 0 ? styles.subReplyAvatar : styles.replyAvatar}>
+                    {author.profile_picture ? (
+                        <img
+                            src={author.profile_picture}
+                            alt={author.username}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                        />
+                    ) : (
+                        initial
+                    )}
+                </div>
+            </Link>
+        </div>
+    )
+}
+ 
+ReplyAvatar.propTypes = {
+    author: PropTypes.shape({
+        username: PropTypes.string.isRequired,
+        profile_picture: PropTypes.string,
+    }).isRequired,
+    depth: PropTypes.number.isRequired,
+    styles: PropTypes.object.isRequired,
+}
+ 
+function ReplyActions({
+    reply,
+    childrenCount,
+    isExpanded,
+    onLike,
+    onReply,
+    onToggleExpand,
+    styles,
+}) {
+    return (
+        <div className={styles.replyActions} onClick={(e) => e.stopPropagation()} role="presentation">
+            <button
+                type="button"
+                className={[styles.replyActionBtn, reply.liked ? styles.likedBtn : ''].join(' ')}
+                onClick={onLike}
+                aria-label="Liker le commentaire"
+            >
+                <Heart size={11} className={reply.liked ? styles.heartActive : ''} />
+                {(reply.likes_count || 0) > 0 && <span className={styles.replyActionCount}>{reply.likes_count}</span>}
+            </button>
+            <button
+                type="button"
+                className={styles.replyActionBtn}
+                onClick={onReply}
+                aria-label="Répondre au commentaire"
+            >
+                <MessageCircle size={11} />
+                <span>Répondre</span>
+            </button>
+ 
+            {childrenCount > 0 && (
+                <button
+                    type="button"
+                    className={styles.toggleSubRepliesBtn}
+                    onClick={onToggleExpand}
+                    aria-label={isExpanded ? "Masquer les réponses" : `Afficher les réponses (${childrenCount})`}
+                >
+                    {isExpanded ? (
+                        <>
+                            <ChevronUp size={11} />
+                            <span>Masquer</span>
+                        </>
+                    ) : (
+                        <>
+                            <ChevronDown size={11} />
+                            <span>Voir ({childrenCount})</span>
+                        </>
+                    )}
+                </button>
+            )}
+        </div>
+    )
+}
+ 
+ReplyActions.propTypes = {
+    reply: PropTypes.shape({
+        id_message: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        liked: PropTypes.bool,
+        likes_count: PropTypes.number,
+    }).isRequired,
+    childrenCount: PropTypes.number.isRequired,
+    isExpanded: PropTypes.bool.isRequired,
+    onLike: PropTypes.func.isRequired,
+    onReply: PropTypes.func.isRequired,
+    onToggleExpand: PropTypes.func.isRequired,
+    styles: PropTypes.object.isRequired,
+}
+ 
+PostCard.propTypes = {
+    post: PropTypes.shape({
+        id_message: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        content: PropTypes.string.isRequired,
+        date_publication: PropTypes.string.isRequired,
+        author: PropTypes.shape({
+            id_user: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            username: PropTypes.string.isRequired,
+            profile_picture: PropTypes.string,
+        }).isRequired,
+        likes_count: PropTypes.number,
+        replies_count: PropTypes.number,
+        tags: PropTypes.arrayOf(PropTypes.string),
+        reply_to: PropTypes.object,
+        media: PropTypes.shape({
+            type: PropTypes.string,
+            url: PropTypes.string,
+        }),
+    }).isRequired,
+    threadVariant: PropTypes.string,
+    animDelay: PropTypes.string,
+    compact: PropTypes.bool,
+    replies: PropTypes.array,
+}
+ 
 export default PostCard

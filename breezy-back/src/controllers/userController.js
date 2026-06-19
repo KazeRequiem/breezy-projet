@@ -8,9 +8,9 @@ const User = db.User;
 exports.getByUsername = async (req, res) => {
     try {
         const user = await User.findOne(
-            { username: { $regex: new RegExp(`^${req.params.username}$`, "i") } },
+            { username: req.params.username },
             { password: 0 } // exclure le mot de passe
-        );
+        ).collation({ locale: "en", strength: 2 });
 
         if (!user) {
             return res.status(404).json({ message: "Utilisateur introuvable" });

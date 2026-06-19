@@ -38,8 +38,8 @@ function ProfilePage() {
     const targetUsername = username || currentLoggedUser
 
     const [profileUser,  setProfileUser]  = useState(null)
-    const [loading,      setLoading]      = useState(true)
-    const [notFound,     setNotFound]     = useState(false)
+    const [loading,      setLoading]      = useState(() => !!targetUsername)
+    const [notFound,     setNotFound]     = useState(() => !targetUsername)
 
     const [isComposerOpen, setIsComposerOpen] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -47,15 +47,22 @@ function ProfilePage() {
     const [breezesCount,   setBreezesCount]   = useState(0)
     const [follows,        setFollows]        = useState({})
 
-    useEffect(() => {
+    const [prevTargetUsername, setPrevTargetUsername] = useState(targetUsername)
+
+    if (targetUsername !== prevTargetUsername) {
+        setPrevTargetUsername(targetUsername)
+        setProfileUser(null)
         if (!targetUsername) {
             setNotFound(true)
             setLoading(false)
-            return
+        } else {
+            setNotFound(false)
+            setLoading(true)
         }
+    }
 
-        setLoading(true)
-        setNotFound(false)
+    useEffect(() => {
+        if (!targetUsername) return
 
         getUserByUsername(targetUsername)
             .then(data => {
