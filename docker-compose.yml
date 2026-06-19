@@ -77,6 +77,8 @@ services:
       VAULT_TOKEN: ${VAULT_TOKEN}
       APP_PORT: ${APP_PORT}
       CORS_ORIGIN: ${CORS_ORIGIN}
+    ports:
+      - "3000:3000"
     volumes:
       - ./breezy-back:/app
       - /app/node_modules
