@@ -5,19 +5,19 @@ exports.create = async (req, res) => {
     try {
         const { content, image_url, video_url } = req.body;
 
-        if (!content || content.trim().lenght === 0) {
+        if (!content || content.trim().length === 0) {
             return res.status(400).json({ message: "Le contenu est requis" });
         }
 
         if (content.length > 280) {
-            return res.status(400).json({ message: "Le contenu ne peu pas dépasser 280 caractères" });
+            return res.status(400).json({ message: "Le contenu ne peut pas dépasser 280 caractères" });
         }
 
         const message = await Message.create({
             content,
             image_url: image_url || null,
             video_url: video_url || null,
-            id_user: req.user.id_user,
+            author: req.user.id,
         });
 
         res.status(201).json(message);
@@ -27,18 +27,17 @@ exports.create = async (req, res) => {
     }
 };
 
-exports.getByUser = async (req,res) =>{
-    try{
-        const {id_user}= req.params;
+exports.getByUser = async (req, res) => {
+    try {
+        const { id_user } = req.params;
 
-        const messages = await Message.findAll({
-            where: {id_user},
-            order: [["date publication","DESC"]] //Filter to have the most recent in first
-        });
+        const messages = await Message
+            .find({ author: id_user })
+            .sort({ createdAt: -1 }); // -1 = most recent first
 
         res.status(200).json(messages);
-    }catch(err) {
+    } catch (err) {
         console.error(err);
-        res.status(500).json({message: "Erreur serveur"});
+        res.status(500).json({ message: "Erreur serveur" });
     }
 };

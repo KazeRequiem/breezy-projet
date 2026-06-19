@@ -1,0 +1,14 @@
+const mongoose = require("mongoose");
+
+const messageSchema = new mongoose.Schema(
+  {
+    content: { type: String, required: true, maxlength: 280 },
+    image_url: { type: String, maxlength: 255, default: null },
+    video_url: { type: String, maxlength: 255, default: null },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    warn: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Message", messageSchema);
