@@ -55,7 +55,7 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "email et mot de passe sont requis" });
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: String(email) });
         if (!user) {
             return res.status(401).json({ message: "Identifiants invalides" });
         }

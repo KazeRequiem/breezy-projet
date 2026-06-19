@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const TEST_SECRET = "secret_de_test"
 
 jest.mock("../src/models", () => ({
     User: {
@@ -90,7 +91,7 @@ describe("authController.login", () => {
         expect(res.json).toHaveBeenCalled();
         const payload = res.json.mock.calls[0][0];
         expect(payload).toHaveProperty("token");
-        jwt.verify(payload.token, "secret_de_test");
+        jwt.verify(payload.token, TEST_SECRET);
     });
 
     test("le token contient l'id et le rôle du user", async () => {
@@ -103,18 +104,18 @@ describe("authController.login", () => {
         await authController.login(req, res);
 
         const payload = res.json.mock.calls[0][0];
-        const decoded = jwt.verify(payload.token, "secret_de_test");
+        const decoded = jwt.verify(payload.token, TEST_SECRET);
         expect(decoded.id).toBe("u1");
         expect(decoded.role).toBe("admin");
     });
 
     test("rejette (400) une tentative d'injection NoSQL sur l'email", async () => {
-    const req = { body: { email: { $gt: "" }, password: "1234" } };
-    const res = mockRes();
+        const req = { body: { email: { $gt: "" }, password: "1234" } };
+        const res = mockRes();
 
-    await authController.login(req, res);
+        await authController.login(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(db.User.findOne).not.toHaveBeenCalled();
-});
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(db.User.findOne).not.toHaveBeenCalled();
+    });
 });
