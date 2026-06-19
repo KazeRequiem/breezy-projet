@@ -107,4 +107,14 @@ describe("authController.login", () => {
         expect(decoded.id).toBe("u1");
         expect(decoded.role).toBe("admin");
     });
+
+    test("rejette (400) une tentative d'injection NoSQL sur l'email", async () => {
+    const req = { body: { email: { $gt: "" }, password: "1234" } };
+    const res = mockRes();
+
+    await authController.login(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(db.User.findOne).not.toHaveBeenCalled();
+});
 });

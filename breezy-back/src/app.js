@@ -5,6 +5,7 @@ const swaggerSpec = require("./config/swagger");
 const env = require("./config/env");
 
 const app = express();
+app.disable("x-powered-by"); //Disable the fact that the back says Hey i turn on express bro
 
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json());

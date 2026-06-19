@@ -22,7 +22,7 @@ async function loadSecrets() {
         return;
       }
     } catch (err) {
-      console.log(`Secret pas encore dispo, tentative ${i + 1}/10...`);
+      console.log(`Secret pas encore dispo, tentative ${i + 1}/10 (${err.message})`);
     }
     await wait(2000);
   }
