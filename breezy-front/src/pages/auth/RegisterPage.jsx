@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Check, Hash, ChevronRight, User, ImagePlus, Eye, EyeOff } from 'lucide-react'
 import AuthCard   from '../../components/ui/AuthCard/AuthCard'
@@ -48,8 +48,30 @@ function RegisterPage() {
     const [captchaAnswer,   setCaptchaAnswer]   = useState('')
 
     /* Étape 3 profil */
-    const [bio,          setBio]          = useState('')
-    const [selectedTags, setSelectedTags] = useState([])
+    const [bio,            setBio]          = useState('')
+    const [selectedTags,   setSelectedTags] = useState([])
+    const [avatarPreview,  setAvatarPreview] = useState(null)  // URL locale pour la preview
+    const [avatarBase64,   setAvatarBase64]  = useState(null)  // base64 envoyé à l'API
+    const fileInputRef = useRef(null)
+
+    const handleAvatarChange = (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            setError('Format non supporté. Utilise JPG, PNG ou WebP.')
+            return
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image trop lourde (max 5 Mo).')
+            return
+        }
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+            setAvatarPreview(ev.target.result)
+            setAvatarBase64(ev.target.result) // data URL = base64
+        }
+        reader.readAsDataURL(file)
+    }
 
     /* Helpers */
     const updateCred = field => e => { setError(''); setCreds(p => ({ ...p, [field]: e.target.value })) }
@@ -122,8 +144,8 @@ function RegisterPage() {
         setLoading(true)
         setError('')
         try {
-            // 1. Créer le compte
-            await apiRegister(creds.username, creds.email, creds.password, bio || null)
+            // 1. Créer le compte (avec les tags sélectionnés et la photo de profil)
+            await apiRegister(creds.username, creds.email, creds.password, bio || null, selectedTags, avatarBase64 || null)
 
             // 2. Login automatique pour récupérer le token et le stocker
             const { token, user } = await apiLogin(creds.email, creds.password)
@@ -249,16 +271,33 @@ function RegisterPage() {
             {step === 3 && (
                 <form className={styles.form} onSubmit={handleStep3} noValidate aria-label="Étape 3 : profil">
 
-                    {/* Photo de profil (placeholder — upload à brancher) */}
+                    {/* Photo de profil */}
                     <div className={regStyles.avatarSection}>
-                        <div className={regStyles.avatarPreview}>
-                            <User size={32} color="rgba(120,100,160,0.5)" />
+                        <div
+                            className={regStyles.avatarPreview}
+                            style={avatarPreview ? { backgroundImage: `url(${avatarPreview})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                            aria-label="Aperçu de la photo de profil"
+                        >
+                            {!avatarPreview && <User size={32} color="rgba(120,100,160,0.5)" />}
                         </div>
-                        <button type="button" className={regStyles.uploadBtn} aria-label="Choisir une photo de profil">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            style={{ display: 'none' }}
+                            onChange={handleAvatarChange}
+                            aria-label="Sélectionner une photo de profil"
+                        />
+                        <button
+                            type="button"
+                            className={regStyles.uploadBtn}
+                            onClick={() => fileInputRef.current?.click()}
+                            aria-label="Choisir une photo de profil"
+                        >
                             <ImagePlus size={14} />
-                            Choisir une photo
+                            {avatarPreview ? 'Changer la photo' : 'Choisir une photo'}
                         </button>
-                        <p className={regStyles.uploadNote}>Format JPG ou PNG, max 5 Mo</p>
+                        <p className={regStyles.uploadNote}>Format JPG, PNG ou WebP, max 5 Mo</p>
                     </div>
 
                     {/* Biographie */}

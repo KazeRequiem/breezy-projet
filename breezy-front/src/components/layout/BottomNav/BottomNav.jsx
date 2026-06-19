@@ -18,6 +18,25 @@ function BottomNav() {
     const navigate = useNavigate()
     const { user } = useAuth()
     const username = user?.username ?? ''
+    const profilePicture = user?.profile_picture ?? null
+
+    let avatarContent
+    if (profilePicture) {
+        avatarContent = <img src={profilePicture} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+    } else if (username) {
+        avatarContent = username.charAt(0).toUpperCase()
+    } else {
+        avatarContent = <User size={20} strokeWidth={1.8} />
+    }
+
+    let sidebarAvatarContent
+    if (profilePicture) {
+        sidebarAvatarContent = <img src={profilePicture} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+    } else if (username) {
+        sidebarAvatarContent = username.charAt(0).toUpperCase()
+    } else {
+        sidebarAvatarContent = '?'
+    }
 
     // États recherche
     const [searchQuery, setSearchQuery] = useState('')
@@ -112,7 +131,7 @@ function BottomNav() {
                     id="bottomnav-profile"
                 >
                     <div className={styles.navAvatar} aria-hidden="true">
-                        {username ? username.charAt(0).toUpperCase() : <User size={20} strokeWidth={1.8} />}
+                        {avatarContent}
                     </div>
                 </Link>
 
@@ -203,7 +222,7 @@ function BottomNav() {
                     id="sidebar-profile-link"
                 >
                     <div className={styles.sidebarAvatar} aria-hidden="true">
-                        {username ? username.charAt(0).toUpperCase() : '?'}
+                        {sidebarAvatarContent}
                     </div>
                     <div className={styles.sidebarProfileInfo}>
                         <span className={styles.sidebarProfileName}>{username || 'Invité'}</span>

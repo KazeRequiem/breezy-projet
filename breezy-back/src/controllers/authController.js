@@ -7,7 +7,7 @@ const User = db.User;
 
 exports.register = async (req, res) => {
     try {
-        const { username, email, password, biography, profile_picture } = req.body;
+        const { username, email, password, biography, profile_picture, tags } = req.body;
 
         if (
             typeof username !== "string" ||
@@ -31,6 +31,7 @@ exports.register = async (req, res) => {
             biography: biography || null,
             profile_picture: profile_picture || null,
             role: "user",
+            tags: tags || [],
         });
 
         res.status(201).json({
@@ -78,6 +79,7 @@ exports.login = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 role: user.role,
+                profile_picture: user.profile_picture || null,
             },
         });
     } catch (err) {
