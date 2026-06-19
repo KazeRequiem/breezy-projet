@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { UserX } from 'lucide-react'
 import TopBar          from '../../components/layout/TopBar/TopBar'
@@ -11,9 +11,8 @@ import PostCard         from '../../components/post/PostCard/PostCard'
 import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal'
 import SettingsModal   from '../../components/profile/SettingsModal/SettingsModal'
 import { useAuth } from '../../contexts/AuthContext'
+import { getUserByUsername } from '../../services/userService'
 import styles from './ProfilePage.module.css'
-
-import { USE_MOCK, getMockUser as mockGetMockUser } from '../../services/mockData'
 
 // Helper pour extraire les hashtags d'un message
 function parseHashtags(text) {
@@ -26,39 +25,51 @@ function parseHashtags(text) {
     return matches
 }
 
-// TODO : remplacer par un appel API GET /api/users/:username
-// (profils et posts chargés depuis la base de données)
-const getMockUser = (username) => {
-    if (USE_MOCK) {
-        return mockGetMockUser(username)
-    }
-    return null
-}
-
 /**
- * ProfilePage : Page de profil utilisateur (Fx4, Fx10, Fx11).
- *
- * Affiche la bannière, l'avatar, la bio, les stats et les derniers posts.
- * Charge les données de l'utilisateur passé dans l'URL.
+ * ProfilePage : Page de profil utilisateur.
+ * Charge le profil via GET /api/users/:username.
  */
 function ProfilePage() {
     const { username } = useParams()
     const { user } = useAuth()
     const currentLoggedUser = user?.username ?? null
 
-    const profileUser = getMockUser(username || currentLoggedUser)
+    // Le username cible : celui de l'URL ou celui connecté
+    const targetUsername = username || currentLoggedUser
 
-    // Posts dérivés directement depuis profileUser (pas de state redondant)
-    const userPosts = profileUser ? profileUser.posts : []
+    const [profileUser,  setProfileUser]  = useState(null)
+    const [loading,      setLoading]      = useState(true)
+    const [notFound,     setNotFound]     = useState(false)
 
     const [isComposerOpen, setIsComposerOpen] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-    const [localPosts, setLocalPosts] = useState(userPosts)
-    const [breezesCount, setBreezesCount] = useState(profileUser?.breezes_count ?? 0)
-    
-    // Gérer l'état de follow par utilisateur
-    const [follows, setFollows] = useState({})
-    const isFollowing = profileUser ? !!follows[profileUser.username.toLowerCase()] : false
+    const [localPosts,     setLocalPosts]     = useState([])
+    const [breezesCount,   setBreezesCount]   = useState(0)
+    const [follows,        setFollows]        = useState({})
+
+    useEffect(() => {
+        if (!targetUsername) {
+            setNotFound(true)
+            setLoading(false)
+            return
+        }
+
+        setLoading(true)
+        setNotFound(false)
+
+        getUserByUsername(targetUsername)
+            .then(data => {
+                setProfileUser(data)
+                setBreezesCount(data.breezes_count ?? 0)
+                setLocalPosts([])
+            })
+            .catch(() => {
+                setNotFound(true)
+            })
+            .finally(() => setLoading(false))
+    }, [targetUsername])
+
+    const isFollowing = profileUser ? !!follows[profileUser.username?.toLowerCase()] : false
 
     const toggleFollow = () => {
         if (!profileUser) return
@@ -74,7 +85,7 @@ function ProfilePage() {
             id_message: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
             content,
             date_publication: new Date().toISOString(),
-            author: { id_user: user.id_user, username: user.username, profile_picture: null },
+            author: { id_user: user.id, username: user.username, profile_picture: null },
             likes_count: 0,
             replies_count: 0,
             tags: parseHashtags(content),
@@ -85,8 +96,30 @@ function ProfilePage() {
         setBreezesCount(prev => prev + 1)
     }
 
-    // Si le profil n'existe pas, on affiche un état "profil introuvable"
-    if (!profileUser) {
+    // Chargement
+    if (loading) {
+        return (
+            <div className={styles.wrapper}>
+                <div className="breezy-bg" aria-hidden="true" />
+                <BreezyAtmosphere />
+                <TopBar />
+                <BottomNav />
+                <div className={styles.layout}>
+                    <main className={styles.mainColumn} role="main">
+                        <div className={[styles.notFoundCard, 'anim-fade-up'].join(' ')}>
+                            <p style={{ color: 'var(--text-secondary)' }}>Chargement du profil…</p>
+                        </div>
+                    </main>
+                    <aside className={styles.rightColumn} aria-label="Tendances">
+                        <TrendingSection />
+                    </aside>
+                </div>
+            </div>
+        )
+    }
+
+    // Profil introuvable
+    if (notFound || !profileUser) {
         return (
             <div className={styles.wrapper}>
                 <div className="breezy-bg" aria-hidden="true" />
@@ -100,7 +133,7 @@ function ProfilePage() {
                             <UserX size={48} strokeWidth={1.5} color="var(--brand)" />
                             <h1 className={styles.notFoundTitle}>Profil introuvable</h1>
                             <p className={styles.notFoundText}>
-                                L'utilisateur <strong>@{username}</strong> n'existe pas ou son compte a été supprimé.
+                                L'utilisateur <strong>@{targetUsername}</strong> n'existe pas ou son compte a été supprimé.
                             </p>
                             <Link to="/feed" className={styles.backHomeBtn}>
                                 Retourner à l'accueil
@@ -117,7 +150,7 @@ function ProfilePage() {
     }
 
     const isOwn = currentLoggedUser
-        ? (username || currentLoggedUser).toLowerCase() === currentLoggedUser.toLowerCase()
+        ? targetUsername.toLowerCase() === currentLoggedUser.toLowerCase()
         : false
 
     return (
@@ -148,8 +181,8 @@ function ProfilePage() {
                         <div className={styles.statsWrap}>
                             <ProfileStats
                                 breezesCount={breezesCount}
-                                followersCount={profileUser.followers_count + (isFollowing ? 1 : 0)}
-                                followingCount={profileUser.following_count}
+                                followersCount={(profileUser.followers_count ?? 0) + (isFollowing ? 1 : 0)}
+                                followingCount={profileUser.following_count ?? 0}
                             />
                         </div>
                     </section>
@@ -176,10 +209,10 @@ function ProfilePage() {
                     </section>
 
                     {/* Modal de composition de post */}
-                    <NewBreezeModal 
-                        isOpen={isComposerOpen} 
-                        onClose={() => setIsComposerOpen(false)} 
-                        onPublish={handlePublish} 
+                    <NewBreezeModal
+                        isOpen={isComposerOpen}
+                        onClose={() => setIsComposerOpen(false)}
+                        onPublish={handlePublish}
                     />
 
                     {/* Modal des paramètres (déconnexion, mot de passe) */}

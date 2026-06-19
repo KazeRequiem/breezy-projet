@@ -236,7 +236,10 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                         <div className={styles.avatarCol}>
                             <Link to={`/profile/${author.username}`} className={styles.avatarLink} aria-label={`Profil de @${author.username}`}>
                                 <div className={styles.avatar} aria-hidden="true">
-                                    {author.username.charAt(0).toUpperCase()}
+                                    {author.profile_picture
+                                        ? <img src={author.profile_picture} alt={author.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                                        : author.username.charAt(0).toUpperCase()
+                                    }
                                 </div>
                             </Link>
                             {/* Ligne verticale sous l'avatar (post racine d'un thread) */}
@@ -461,7 +464,10 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <div className={depth > 0 ? styles.subReplyAvatar : styles.replyAvatar}>
-                                            {reply.author.username.charAt(0).toUpperCase()}
+                                            {reply.author.profile_picture
+                                                ? <img src={reply.author.profile_picture} alt={reply.author.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                                                : reply.author.username.charAt(0).toUpperCase()
+                                            }
                                         </div>
                                     </Link>
                                 </div>

@@ -18,6 +18,7 @@ function BottomNav() {
     const navigate = useNavigate()
     const { user } = useAuth()
     const username = user?.username ?? ''
+    const profilePicture = user?.profile_picture ?? null
 
     // États recherche
     const [searchQuery, setSearchQuery] = useState('')
@@ -112,7 +113,10 @@ function BottomNav() {
                     id="bottomnav-profile"
                 >
                     <div className={styles.navAvatar} aria-hidden="true">
-                        {username ? username.charAt(0).toUpperCase() : <User size={20} strokeWidth={1.8} />}
+                        {profilePicture
+                            ? <img src={profilePicture} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                            : username ? username.charAt(0).toUpperCase() : <User size={20} strokeWidth={1.8} />
+                        }
                     </div>
                 </Link>
 
@@ -203,7 +207,10 @@ function BottomNav() {
                     id="sidebar-profile-link"
                 >
                     <div className={styles.sidebarAvatar} aria-hidden="true">
-                        {username ? username.charAt(0).toUpperCase() : '?'}
+                        {profilePicture
+                            ? <img src={profilePicture} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                            : username ? username.charAt(0).toUpperCase() : '?'
+                        }
                     </div>
                     <div className={styles.sidebarProfileInfo}>
                         <span className={styles.sidebarProfileName}>{username || 'Invité'}</span>
