@@ -7,14 +7,14 @@ async function paginateMessages(baseFilter, query) {
     // Curseur "before" : we only keep the oldest messages (if date correct)
     if (query.before) {
         const beforeDate = new Date(query.before);
-        if (!isNaN(beforeDate.getTime())) {
+        if (!Number.isNaN(beforeDate.getTime())) {
             filter.createdAt = { $lt: beforeDate };
         }
         // invalide before -> ignored (fallback : most recent)
     }
 
     // limit at 20 (default 20)
-    const requested = parseInt(query.limit, 10);
+    const requested = Number.parseInt(query.limit, 10);
     const limit = Math.min(Number.isNaN(requested) ? 20 : requested, 20);
 
     return Message
