@@ -11,8 +11,13 @@ export async function apiFetch(path, options = {}) {
     try {
         // TODO (Sécurité) : Quand le back sera en httpOnly, décommenter cette ligne pour envoyer automatiquement le cookie :
         // options.credentials = 'include'
+        const token = sessionStorage.getItem('breezy_token');
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
         res = await fetch(`${API_BASE}${path}`, {
-            headers: { 'Content-Type': 'application/json', ...options.headers },
+            headers,
             ...options,
         })
     } catch {
