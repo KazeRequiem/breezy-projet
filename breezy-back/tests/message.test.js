@@ -2,6 +2,9 @@ jest.mock("../src/models", () => ({
     Message: {
         create: jest.fn(),
         find: jest.fn(),
+        findById: jest.fn(),
+        findByIdAndUpdate: jest.fn(),
+        deleteOne: jest.fn(),
     },
 }));
 
@@ -90,5 +93,111 @@ describe("messageController.getByUser", () => {
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith([]);
+    });
+});
+
+describe("messageController.update", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test("refuse (404) si le message n'existe pas", async () => {
+        db.Message.findById.mockResolvedValue(null);
+        const req = { params: { id: "m1" }, user: { id: "u1" }, body: { content: "nouveau" } };
+        const res = mockRes();
+        await messageController.update(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    test("refuse (403) si on n'est pas l'auteur", async () => {
+        // author est un ObjectId -> on simule avec un objet qui a toString()
+        db.Message.findById.mockResolvedValue({
+            _id: "m1",
+            author: { toString: () => "u999" }, // un autre user
+        });
+        const req = { params: { id: "m1" }, user: { id: "u1" }, body: { content: "nouveau" } };
+        const res = mockRes();
+        await messageController.update(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(db.Message.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    test("refuse (400) si le contenu est vide", async () => {
+        db.Message.findById.mockResolvedValue({
+            _id: "m1",
+            author: { toString: () => "u1" },
+        });
+        const req = { params: { id: "m1" }, user: { id: "u1" }, body: { content: "" } };
+        const res = mockRes();
+        await messageController.update(req, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    test("met à jour (200) content et tags si on est l'auteur", async () => {
+        db.Message.findById.mockResolvedValue({
+            _id: "m1",
+            author: { toString: () => "u1" },
+        });
+        db.Message.findByIdAndUpdate.mockResolvedValue({
+            _id: "m1", content: "modifié", tags: ["news"],
+        });
+        const req = {
+            params: { id: "m1" },
+            user: { id: "u1" },
+            body: { content: "modifié", tags: ["news"] },
+        };
+        const res = mockRes();
+        await messageController.update(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        const updateArg = db.Message.findByIdAndUpdate.mock.calls[0][1];
+        expect(updateArg.content).toBe("modifié");
+        expect(updateArg.tags).toEqual(["news"]);
+    });
+});
+
+describe("messageController.remove", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test("refuse (404) si le message n'existe pas", async () => {
+        db.Message.findById.mockResolvedValue(null);
+        const req = { params: { id: "m1" }, user: { id: "u1", role: "user" } };
+        const res = mockRes();
+        await messageController.remove(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    test("refuse (403) si un user normal supprime le message d'un autre", async () => {
+        db.Message.findById.mockResolvedValue({
+            _id: "m1",
+            author: { toString: () => "u999" },
+        });
+        const req = { params: { id: "m1" }, user: { id: "u1", role: "user" } };
+        const res = mockRes();
+        await messageController.remove(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(db.Message.deleteOne).not.toHaveBeenCalled();
+    });
+
+    test("autorise (200) l'auteur à supprimer son message", async () => {
+        db.Message.findById.mockResolvedValue({
+            _id: "m1",
+            author: { toString: () => "u1" },
+        });
+        db.Message.deleteOne.mockResolvedValue({ deletedCount: 1 });
+        const req = { params: { id: "m1" }, user: { id: "u1", role: "user" } };
+        const res = mockRes();
+        await messageController.remove(req, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test("autorise (200) un modérateur à supprimer le message d'un autre", async () => {
+        db.Message.findById.mockResolvedValue({
+            _id: "m1",
+            author: { toString: () => "u999" }, // pas le sien
+        });
+        db.Message.deleteOne.mockResolvedValue({ deletedCount: 1 });
+        const req = { params: { id: "m1" }, user: { id: "u1", role: "moderator" } };
+        const res = mockRes();
+        await messageController.remove(req, res);
+        expect(res.status).toHaveBeenCalledWith(200);
     });
 });
