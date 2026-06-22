@@ -62,6 +62,7 @@ exports.getByUsername = async (req, res) => {
     }
 };
 
+// PATCH /messages/:id - only author can modify (content + tags)
 exports.update = async (req, res) => {
     try {
         const message = await Message.findById(req.params.id);
@@ -98,6 +99,7 @@ exports.update = async (req, res) => {
     }
 };
 
+// DELETE /messages/:id — Author OR a moderator/admin
 exports.remove = async (req, res) => {
     try {
         const message = await Message.findById(req.params.id);
@@ -114,6 +116,37 @@ exports.remove = async (req, res) => {
 
         await Message.deleteOne({ _id: req.params.id });
         res.status(200).json({ message: "Message supprimé" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+// GET /messages/explore?limit=20&before=<date> — All the message (discovery)
+exports.explore = async (req, res) => {
+    try {
+        const filter = {};
+
+        // Curseur : if before is an old date, we only take the oldest
+        if (req.query.before) {
+            const beforeDate = new Date(req.query.before);
+            if (!isNaN(beforeDate.getTime())) {
+                filter.createdAt = { $lt: beforeDate };
+            }
+            // invalide before -> ignored (fallback : most recent)
+        }
+
+        // limit demandé, plafonné à 20 (défaut 20 aussi)
+        const requested = parseInt(req.query.limit, 10);
+        const limit = Math.min(Number.isNaN(requested) ? 20 : requested, 20);
+
+        const messages = await Message
+            .find(filter)
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .populate("author", "username profile_picture");
+
+        res.status(200).json(messages);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Erreur serveur" });
