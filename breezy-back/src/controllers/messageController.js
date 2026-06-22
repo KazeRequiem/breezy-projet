@@ -1,6 +1,7 @@
 const db = require("../models");
 const Message = db.Message;
 const User = db.User;
+const Follow = db.Follow;
 
 exports.create = async (req, res) => {
     try {
@@ -136,7 +137,6 @@ exports.explore = async (req, res) => {
             // invalide before -> ignored (fallback : most recent)
         }
 
-        // limit demandé, plafonné à 20 (défaut 20 aussi)
         const requested = parseInt(req.query.limit, 10);
         const limit = Math.min(Number.isNaN(requested) ? 20 : requested, 20);
 
@@ -146,6 +146,42 @@ exports.explore = async (req, res) => {
             .limit(limit)
             .populate("author", "username profile_picture");
 
+        res.status(200).json(messages);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+// GET /messages/feed?limit=20&before=<date> — subscribe feed (Fx5)
+exports.feed = async (req, res) => {
+    try {
+        const follows = await Follow.find({ follower: req.user.id });
+ 
+        if (follows.length === 0) {
+            return res.status(200).json([]);
+        }
+ 
+        const followingIds = follows.map((f) => f.following);
+ 
+        const filter = { author: { $in: followingIds } };
+ 
+        if (req.query.before) {
+            const beforeDate = new Date(req.query.before);
+            if (!isNaN(beforeDate.getTime())) {
+                filter.createdAt = { $lt: beforeDate };
+            }
+        }
+ 
+        const requested = parseInt(req.query.limit, 10);
+        const limit = Math.min(Number.isNaN(requested) ? 20 : requested, 20);
+ 
+        const messages = await Message
+            .find(filter)
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .populate("author", "username profile_picture");
+ 
         res.status(200).json(messages);
     } catch (err) {
         console.error(err);

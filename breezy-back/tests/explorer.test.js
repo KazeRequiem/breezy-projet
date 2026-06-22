@@ -14,8 +14,8 @@ function mockRes() {
     return res;
 }
 
-// Helper : construit une chaîne find().sort().limit().populate() mockée
-// qui résout vers `result`. Renvoie aussi les espions pour vérifier les args.
+// Helper : build a chain find().sort().limit().populate() mocked
+// which resolve into `result`. Also return spy in order to check args.
 function mockChain(result) {
     const populate = jest.fn().mockResolvedValue(result);
     const limit = jest.fn().mockReturnValue({ populate });
@@ -38,11 +38,9 @@ describe("messageController.explore", () => {
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(fake);
 
-        // le filtre find ne contient PAS de createdAt (pas de before)
         const findArg = db.Message.find.mock.calls[0][0];
         expect(findArg.createdAt).toBeUndefined();
 
-        // tri décroissant + limit 20
         expect(chain.sort).toHaveBeenCalledWith({ createdAt: -1 });
         expect(chain.limit).toHaveBeenCalledWith(20);
     });
