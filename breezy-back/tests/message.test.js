@@ -6,6 +6,9 @@ jest.mock("../src/models", () => ({
         findByIdAndUpdate: jest.fn(),
         deleteOne: jest.fn(),
     },
+    User: {
+        findOne: jest.fn(),
+    },
 }));
 
 const db = require("../src/models");
@@ -138,5 +141,53 @@ describe("messageController.remove", () => {
         const res = mockRes();
         await messageController.remove(req, res);
         expect(res.status).toHaveBeenCalledWith(200);
+    });
+});
+
+describe("messageController.getByUsername", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test("refuse (404) si l'utilisateur n'existe pas", async () => {
+        db.User.findOne.mockResolvedValue(null);
+        const req = { params: { username: "inconnu" } };
+        const res = mockRes();
+        await messageController.getByUsername(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(db.Message.find).not.toHaveBeenCalled();
+    });
+
+    test("retourne (200) les messages de l'utilisateur trouvé", async () => {
+        db.User.findOne.mockResolvedValue({ _id: "u1", username: "flora" });
+        const fakeMessages = [
+            { _id: "m1", content: "Post 1", author: "u1" },
+            { _id: "m2", content: "Post 2", author: "u1" },
+        ];
+        db.Message.find.mockReturnValue({
+            sort: jest.fn().mockResolvedValue(fakeMessages),
+        });
+
+        const req = { params: { username: "flora" } };
+        const res = mockRes();
+        await messageController.getByUsername(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(fakeMessages);
+        // on cherche bien les messages de l'_id résolu, pas du username
+        const findArg = db.Message.find.mock.calls[0][0];
+        expect(findArg.author).toBe("u1");
+    });
+
+    test("retourne (200) un tableau vide si l'utilisateur n'a pas de message", async () => {
+        db.User.findOne.mockResolvedValue({ _id: "u1", username: "flora" });
+        db.Message.find.mockReturnValue({
+            sort: jest.fn().mockResolvedValue([]),
+        });
+
+        const req = { params: { username: "flora" } };
+        const res = mockRes();
+        await messageController.getByUsername(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith([]);
     });
 });
