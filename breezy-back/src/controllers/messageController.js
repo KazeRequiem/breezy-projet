@@ -1,5 +1,6 @@
 const db = require("../models");
 const Message = db.Message;
+const User = db.User;
 
 exports.create = async (req, res) => {
     try {
@@ -35,6 +36,24 @@ exports.getByUser = async (req, res) => {
         const messages = await Message
             .find({ author: id_user })
             .sort({ createdAt: -1 }); // -1 = most recent first
+
+        res.status(200).json(messages);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+exports.getByUsername = async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.params.username });
+        if (!user) {
+            return res.status(404).json({ message: "Utilisateur introuvable" });
+        }
+
+        const messages = await Message
+            .find({ author: user._id })
+            .sort({ createdAt: -1 });
 
         res.status(200).json(messages);
     } catch (err) {

@@ -56,3 +56,13 @@ exports.getByMessage = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
+
+exports.getStatus = async (req, res) => {
+    try {
+        const {messageId} = req.params;
+        
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" })
+    }
+};
