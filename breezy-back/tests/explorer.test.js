@@ -76,7 +76,6 @@ describe("messageController.explore", () => {
         const res = mockRes();
         await messageController.explore(req, res);
 
-        // on a demandé 100 mais le plafond ramène à 20
         expect(chain.limit).toHaveBeenCalledWith(20);
     });
 

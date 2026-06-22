@@ -2,6 +2,7 @@ const db = require("../models");
 const Message = db.Message;
 const User = db.User;
 const Follow = db.Follow;
+const { paginateMessages } = require("../utils/paginateMessages");
 
 exports.create = async (req, res) => {
     try {
@@ -126,62 +127,27 @@ exports.remove = async (req, res) => {
 // GET /messages/explore?limit=20&before=<date> — All the message (discovery)
 exports.explore = async (req, res) => {
     try {
-        const filter = {};
-
-        // Curseur : if before is an old date, we only take the oldest
-        if (req.query.before) {
-            const beforeDate = new Date(req.query.before);
-            if (!isNaN(beforeDate.getTime())) {
-                filter.createdAt = { $lt: beforeDate };
-            }
-            // invalide before -> ignored (fallback : most recent)
-        }
-
-        const requested = parseInt(req.query.limit, 10);
-        const limit = Math.min(Number.isNaN(requested) ? 20 : requested, 20);
-
-        const messages = await Message
-            .find(filter)
-            .sort({ createdAt: -1 })
-            .limit(limit)
-            .populate("author", "username profile_picture");
-
+        const messages = await paginateMessages({}, req.query);
         res.status(200).json(messages);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
-
-// GET /messages/feed?limit=20&before=<date> — subscribe feed (Fx5)
+ 
+// GET /messages/feed?limit=20&before=<date> - Subscribe feed (Fx5)
 exports.feed = async (req, res) => {
     try {
         const follows = await Follow.find({ follower: req.user.id });
- 
         if (follows.length === 0) {
             return res.status(200).json([]);
         }
- 
         const followingIds = follows.map((f) => f.following);
  
-        const filter = { author: { $in: followingIds } };
- 
-        if (req.query.before) {
-            const beforeDate = new Date(req.query.before);
-            if (!isNaN(beforeDate.getTime())) {
-                filter.createdAt = { $lt: beforeDate };
-            }
-        }
- 
-        const requested = parseInt(req.query.limit, 10);
-        const limit = Math.min(Number.isNaN(requested) ? 20 : requested, 20);
- 
-        const messages = await Message
-            .find(filter)
-            .sort({ createdAt: -1 })
-            .limit(limit)
-            .populate("author", "username profile_picture");
- 
+        const messages = await paginateMessages(
+            { author: { $in: followingIds } },
+            req.query
+        );
         res.status(200).json(messages);
     } catch (err) {
         console.error(err);
