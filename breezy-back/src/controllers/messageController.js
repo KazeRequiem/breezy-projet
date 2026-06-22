@@ -1,6 +1,8 @@
 const db = require("../models");
 const Message = db.Message;
 const User = db.User;
+const Follow = db.Follow;
+const { paginateMessages } = require("../utils/paginateMessages");
 
 exports.create = async (req, res) => {
     try {
@@ -62,6 +64,7 @@ exports.getByUsername = async (req, res) => {
     }
 };
 
+// PATCH /messages/:id - only author can modify (content + tags)
 exports.update = async (req, res) => {
     try {
         const message = await Message.findById(req.params.id);
@@ -98,6 +101,7 @@ exports.update = async (req, res) => {
     }
 };
 
+// DELETE /messages/:id — Author OR a moderator/admin
 exports.remove = async (req, res) => {
     try {
         const message = await Message.findById(req.params.id);
@@ -114,6 +118,37 @@ exports.remove = async (req, res) => {
 
         await Message.deleteOne({ _id: req.params.id });
         res.status(200).json({ message: "Message supprimé" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+// GET /messages/explore?limit=20&before=<date> — All the message (discovery)
+exports.explore = async (req, res) => {
+    try {
+        const messages = await paginateMessages({}, req.query);
+        res.status(200).json(messages);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+ 
+// GET /messages/feed?limit=20&before=<date> - Subscribe feed (Fx5)
+exports.feed = async (req, res) => {
+    try {
+        const follows = await Follow.find({ follower: req.user.id });
+        if (follows.length === 0) {
+            return res.status(200).json([]);
+        }
+        const followingIds = follows.map((f) => f.following);
+ 
+        const messages = await paginateMessages(
+            { author: { $in: followingIds } },
+            req.query
+        );
+        res.status(200).json(messages);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Erreur serveur" });
