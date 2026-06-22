@@ -7,6 +7,7 @@ const messageSchema = new mongoose.Schema(
     video_url: { type: String, maxlength: 255, default: null },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     warn: { type: Number, default: 0 },
+    tags: { type: [String], default: [] },
   },
   { timestamps: true }
 );

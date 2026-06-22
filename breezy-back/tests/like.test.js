@@ -4,6 +4,7 @@ jest.mock("../src/models", () => ({
         create: jest.fn(),
         deleteOne: jest.fn(),
         find: jest.fn(),
+        countDocuments: jest.fn(),
     },
     Message: {
         findById: jest.fn(),
@@ -108,5 +109,50 @@ describe("likeController.getByMessage", () => {
         expect(res.json).toHaveBeenCalledWith(fake);
         const findArg = db.Like.find.mock.calls[0][0];
         expect(findArg.message).toBe("m1");
+    });
+});
+
+describe("likeController.getStatus", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test("retourne (200) likesCount et likedByMe=true si l'user a liké", async () => {
+        db.Like.countDocuments.mockResolvedValue(42);
+        db.Like.findOne.mockResolvedValue({ _id: "l1" }); // mon like existe
+
+        const req = { params: { messageId: "m1" }, user: { id: "u1" } };
+        const res = mockRes();
+        await likeController.getStatus(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.likesCount).toBe(42);
+        expect(payload.likedByMe).toBe(true);
+    });
+
+    test("retourne (200) likedByMe=false si l'user n'a pas liké", async () => {
+        db.Like.countDocuments.mockResolvedValue(7);
+        db.Like.findOne.mockResolvedValue(null); // pas de like de ma part
+
+        const req = { params: { messageId: "m1" }, user: { id: "u1" } };
+        const res = mockRes();
+        await likeController.getStatus(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.likesCount).toBe(7);
+        expect(payload.likedByMe).toBe(false);
+    });
+
+    test("likedByMe est un booléen strict, jamais l'objet like", async () => {
+        db.Like.countDocuments.mockResolvedValue(1);
+        db.Like.findOne.mockResolvedValue({ _id: "l1", user: "u1", message: "m1" });
+
+        const req = { params: { messageId: "m1" }, user: { id: "u1" } };
+        const res = mockRes();
+        await likeController.getStatus(req, res);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.likedByMe).toBe(true);          // pas l'objet
+        expect(typeof payload.likedByMe).toBe("boolean");
     });
 });

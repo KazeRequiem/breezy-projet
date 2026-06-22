@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../models");
 const { getJwtSecret } = require("../config/vault");
+const { selfUser } = require("../utils/publicUser");
 
 const User = db.User;
 
@@ -34,14 +35,7 @@ exports.register = async (req, res) => {
             tags: tags || [],
         });
 
-        res.status(201).json({
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            biography: user.biography,
-            profile_picture: user.profile_picture,
-            role: user.role,
-        });
+        res.status(201).json(selfUser(user));
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Erreur serveur" });
@@ -74,13 +68,7 @@ exports.login = async (req, res) => {
 
         res.json({
             token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                profile_picture: user.profile_picture || null,
-            },
+            user: selfUser(user),
         });
     } catch (err) {
         console.error(err);
