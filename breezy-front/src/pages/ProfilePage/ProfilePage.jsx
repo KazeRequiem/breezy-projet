@@ -12,6 +12,7 @@ import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal
 import SettingsModal   from '../../components/profile/SettingsModal/SettingsModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { getUserByUsername } from '../../services/userService'
+import { getFollowers, getFollowing, followUser, unfollowUser } from '../../services/followService'
 import styles from './ProfilePage.module.css'
 
 // Helper pour extraire les hashtags d'un message
@@ -45,7 +46,9 @@ function ProfilePage() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [localPosts,     setLocalPosts]     = useState([])
     const [breezesCount,   setBreezesCount]   = useState(0)
-    const [follows,        setFollows]        = useState({})
+    const [isFollowing,    setIsFollowing]    = useState(false)
+    const [followersCount, setFollowersCount] = useState(0)
+    const [followingCount, setFollowingCount] = useState(0)
 
     const [prevTargetUsername, setPrevTargetUsername] = useState(targetUsername)
 
@@ -64,26 +67,51 @@ function ProfilePage() {
     useEffect(() => {
         if (!targetUsername) return
 
+        let cancelled = false
         getUserByUsername(targetUsername)
             .then(data => {
+                if (cancelled) return
                 setProfileUser(data)
                 setBreezesCount(data.breezes_count ?? 0)
+                setFollowersCount(data.followers_count ?? 0)
+                setFollowingCount(data.following_count ?? 0)
                 setLocalPosts([])
+
+                getFollowers(data.id)
+                    .then(followers => {
+                        if (cancelled || !Array.isArray(followers)) return
+                        setFollowersCount(followers.length)
+                        setIsFollowing(followers.some(f => f.follower?._id === user?.id))
+                    })
+                    .catch(() => {})
+
+                getFollowing(data.id)
+                    .then(following => {
+                        if (cancelled || !Array.isArray(following)) return
+                        setFollowingCount(following.length)
+                    })
+                    .catch(() => {})
             })
             .catch(() => {
-                setNotFound(true)
+                if (!cancelled) setNotFound(true)
             })
-            .finally(() => setLoading(false))
-    }, [targetUsername])
+            .finally(() => { if (!cancelled) setLoading(false) })
 
-    const isFollowing = profileUser ? !!follows[profileUser.username?.toLowerCase()] : false
+        return () => { cancelled = true }
+    }, [targetUsername, user?.id])
 
-    const toggleFollow = () => {
+    const handleToggleFollow = async () => {
         if (!profileUser) return
-        setFollows(prev => ({
-            ...prev,
-            [profileUser.username.toLowerCase()]: !prev[profileUser.username.toLowerCase()]
-        }))
+        const next = !isFollowing
+        setIsFollowing(next)
+        setFollowersCount(c => c + (next ? 1 : -1))
+        try {
+            if (next) await followUser(profileUser.id)
+            else await unfollowUser(profileUser.id)
+        } catch {
+            setIsFollowing(!next)
+            setFollowersCount(c => c + (next ? -1 : 1))
+        }
     }
 
     const handlePublish = (content, media = null) => {
@@ -178,7 +206,7 @@ function ProfilePage() {
                             user={profileUser}
                             isOwn={isOwn}
                             isFollowing={isFollowing}
-                            onFollow={toggleFollow}
+                            onFollow={handleToggleFollow}
                             onEdit={() => {}}
                             onSettings={() => setIsSettingsOpen(true)}
                             onNewPost={() => setIsComposerOpen(true)}
@@ -188,8 +216,8 @@ function ProfilePage() {
                         <div className={styles.statsWrap}>
                             <ProfileStats
                                 breezesCount={breezesCount}
-                                followersCount={(profileUser.followers_count ?? 0) + (isFollowing ? 1 : 0)}
-                                followingCount={profileUser.following_count ?? 0}
+                                followersCount={followersCount}
+                                followingCount={followingCount}
                             />
                         </div>
                     </section>
