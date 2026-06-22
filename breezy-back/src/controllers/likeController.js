@@ -59,10 +59,20 @@ exports.getByMessage = async (req, res) => {
 
 exports.getStatus = async (req, res) => {
     try {
-        const {messageId} = req.params;
-        
+        const message = req.params.messageId;
+        const user = req.user.id;
+
+        const [likesCount, myLike] = await Promise.all([
+            Like.countDocuments({ message }),
+            Like.findOne({ message, user }),
+        ]);
+
+        res.status(200).json({
+            likesCount,
+            likedByMe: !!myLike,
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Erreur serveur" })
+        res.status(500).json({ message: "Erreur serveur" });
     }
 };
