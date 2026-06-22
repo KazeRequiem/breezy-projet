@@ -5,7 +5,6 @@ const Like = require("./like");
 const Report = require("./report");
 const Reply = require("./reply");
 const Tag = require("./tag");
-const Categorize = require("./categorize");
 const Whisper = require("./whisper");
 
 module.exports = {
@@ -16,6 +15,5 @@ module.exports = {
     Report,
     Reply,
     Tag,
-    Categorize,
     Whisper,
 };
