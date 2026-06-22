@@ -73,6 +73,8 @@ function ProfilePage() {
                 if (cancelled) return
                 setProfileUser(data)
                 setBreezesCount(data.breezes_count ?? 0)
+                setFollowersCount(data.followers_count ?? 0)
+                setFollowingCount(data.following_count ?? 0)
                 setLocalPosts([])
 
                 getFollowers(data.id)
