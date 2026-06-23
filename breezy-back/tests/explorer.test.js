@@ -2,6 +2,10 @@ jest.mock("../src/models", () => ({
     Message: {
         find: jest.fn(),
     },
+    Reply: {
+        distinct: jest.fn().mockResolvedValue([]),
+        aggregate: jest.fn().mockResolvedValue([]),
+    },
 }));
 
 const db = require("../src/models");
@@ -17,7 +21,9 @@ function mockRes() {
 // Helper : build a chain find().sort().limit().populate() mocked
 // which resolve into `result`. Also return spy in order to check args.
 function mockChain(result) {
-    const populate = jest.fn().mockResolvedValue(result);
+    // paginateMessages calls .toObject() on each message
+    const withToObject = result.map((m) => ({ ...m, toObject: () => m }));
+    const populate = jest.fn().mockResolvedValue(withToObject);
     const limit = jest.fn().mockReturnValue({ populate });
     const sort = jest.fn().mockReturnValue({ limit });
     db.Message.find.mockReturnValue({ sort });
@@ -36,7 +42,7 @@ describe("messageController.explore", () => {
         await messageController.explore(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(fake);
+        expect(res.json).toHaveBeenCalledWith([{ _id: "m1", content: "récent", replies_count: 0 }]);
 
         const findArg = db.Message.find.mock.calls[0][0];
         expect(findArg.createdAt).toBeUndefined();

@@ -1,6 +1,10 @@
 jest.mock("../src/models", () => ({
     Message: { find: jest.fn() },
     Follow: { find: jest.fn() },
+    Reply: {
+        distinct: jest.fn().mockResolvedValue([]),
+        aggregate: jest.fn().mockResolvedValue([]),
+    },
 }));
 
 const db = require("../src/models");
@@ -15,7 +19,8 @@ function mockRes() {
 
 // chain find().sort().limit().populate() mocked
 function mockChain(result) {
-    const populate = jest.fn().mockResolvedValue(result);
+    const withToObject = result.map((m) => ({ ...m, toObject: () => m }));
+    const populate = jest.fn().mockResolvedValue(withToObject);
     const limit = jest.fn().mockReturnValue({ populate });
     const sort = jest.fn().mockReturnValue({ limit });
     db.Message.find.mockReturnValue({ sort });
@@ -50,7 +55,7 @@ describe("messageController.feed", () => {
         await messageController.feed(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(fake);
+        expect(res.json).toHaveBeenCalledWith([{ _id: "m1", content: "post de u2", replies_count: 0 }]);
 
         const followArg = db.Follow.find.mock.calls[0][0];
         expect(followArg.follower).toBe("u1");
