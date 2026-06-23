@@ -1,33 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Trash2, Users, MessageSquare, ChevronDown } from 'lucide-react'
+import { ShieldCheck, Trash2, Users, MessageSquare, ChevronDown, Ban, RotateCcw, Search } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import RequireRole from '../../components/ui/RequireRole/RequireRole'
 import TopBar from '../../components/layout/TopBar/TopBar'
 import BottomNav from '../../components/layout/BottomNav/BottomNav'
 import BreezyAtmosphere from '../../components/ui/BreezyAtmosphere/BreezyAtmosphere'
+import { deleteMessage } from '../../services/messageService'
+import { getAdminMessages, getUsers, updateUserRole, setUserSuspended } from '../../services/adminService'
 import styles from './AdminPage.module.css'
 
-// ─── Données de démo (à remplacer par des appels API quand le back sera prêt) ─
-const DEMO_MESSAGES = [
-    { id_message: 1, content: "Premiere sortie avec la nouvelle UI Breezy 🌊", date_publication: new Date(Date.now() - 4 * 60 * 1000).toISOString(), User: { id_user: 1, username: 'baptistenoisette', role: 'user' } },
-    { id_message: 2, content: "Trop d'accord ! Le fond qui change doucement c'est mon detail prefere ✨", date_publication: new Date(Date.now() - 6 * 60 * 1000).toISOString(), User: { id_user: 2, username: 'camille_lrt', role: 'user' } },
-    { id_message: 3, content: "Quelqu'un a remarque que le background change en permanence ? 👀", date_publication: new Date(Date.now() - 35 * 60 * 1000).toISOString(), User: { id_user: 3, username: 'tommrc', role: 'user' } },
-    { id_message: 4, content: "Dark mode = moins de fatigue oculaire. Light mode = confusion totale 😂", date_publication: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), User: { id_user: 1, username: 'baptistenoisette', role: 'user' } },
-    { id_message: 5, content: "Est-ce qu'il y aura un mode sombre ? 🌙", date_publication: new Date(Date.now() - 60 * 60 * 1000).toISOString(), User: { id_user: 5, username: 'noah_brd', role: 'user' } },
-]
-
-const DEMO_USERS = [
-    { id_user: 1, username: 'baptistenoisette', email: 'baptiste@breezy.app', role: 'admin',     date_creation: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() },
-    { id_user: 2, username: 'camille_lrt',      email: 'camille@breezy.app',  role: 'moderator', date_creation: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString() },
-    { id_user: 3, username: 'tommrc',            email: 'tom@breezy.app',      role: 'user',      date_creation: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString() },
-    { id_user: 4, username: 'leaft_',            email: 'leaft@breezy.app',    role: 'user',      date_creation: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
-    { id_user: 5, username: 'noah_brd',          email: 'noah@breezy.app',     role: 'user',      date_creation: new Date(Date.now() -  5 * 24 * 60 * 60 * 1000).toISOString() },
-]
-// ─────────────────────────────────────────────────────────────────────────────
-
 const ROLES = ['user', 'moderator', 'admin']
-
 const ROLE_COLORS = {
     admin:     styles.badgeAdmin,
     moderator: styles.badgeModerator,
@@ -35,47 +18,62 @@ const ROLE_COLORS = {
 }
 
 function formatDate(iso) {
-    return new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+    return iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
 }
 
-/**
- * AdminPage : Panneau d'administration Breezy.
- *
- * ⚠️  Cette page est protégée côté UX par <RequireRole>.
- *     La vraie protection est assurée par les middlewares Back-end (checkRole).
- *
- * Onglets :
- *   - Messages  → accessible admin + moderator (Fx21)
- *   - Utilisateurs → accessible admin uniquement  (Fx21)
- */
 function AdminPage() {
     const { user } = useAuth()
+    const currentRole = user?.role
+    const currentId = user?.id
     const [activeTab, setActiveTab] = useState('messages')
 
-    // ── État messages ──
-    const [messages, setMessages] = useState(DEMO_MESSAGES)
+    const [messages, setMessages] = useState([])
+    const [users, setUsers] = useState([])
+    const [userSearch, setUserSearch] = useState('')
 
-    const handleDeleteMessage = (id) => {
-        // TODO: appel DELETE /api/messages/:id quand le back sera prêt
-        setMessages(prev => prev.filter(m => m.id_message !== id))
+    useEffect(() => {
+        getAdminMessages().then(setMessages).catch(() => {})
+        getUsers().then(setUsers).catch(() => {})
+    }, [])
+
+    const handleDeleteMessage = async (id) => {
+        try {
+            await deleteMessage(id)
+            setMessages(prev => prev.filter(m => m.id_message !== id))
+        } catch {
+            alert("Erreur lors de la suppression du message.")
+        }
     }
 
-    // ── État utilisateurs ──
-    const [users, setUsers] = useState(DEMO_USERS)
-
-    const handleRoleChange = (id, newRole) => {
-        if (id === user?.id_user) return // ne peut pas se rétrograder soi-même
-        // TODO: appel PUT /api/admin/users/:id/role quand le back sera prêt
-        setUsers(prev => prev.map(u => u.id_user === id ? { ...u, role: newRole } : u))
+    const handleRoleChange = async (id, newRole) => {
+        if (id === currentId) return
+        try {
+            await updateUserRole(id, newRole)
+            setUsers(prev => prev.map(u => u.id === id ? { ...u, role: newRole } : u))
+        } catch (err) {
+            alert(err.message || "Erreur lors du changement de rôle.")
+        }
     }
+
+    const handleToggleSuspend = async (u) => {
+        const next = !u.suspended
+        try {
+            await setUserSuspended(u.id, next)
+            setUsers(prev => prev.map(x => x.id === u.id ? { ...x, suspended: next } : x))
+        } catch (err) {
+            alert(err.message || "Erreur lors de la suspension.")
+        }
+    }
+
+    // Un modérateur ne peut suspendre que des utilisateurs simples
+    const canSuspend = (u) => u.id !== currentId && (currentRole === 'admin' || u.role === 'user')
+
+    const filteredUsers = users.filter(u =>
+        `${u.username} ${u.email}`.toLowerCase().includes(userSearch.trim().toLowerCase())
+    )
 
     return (
-        // RequireRole ici en plus de la route : affiche un message d'erreur propre
-        // si quelqu'un arrive directement sur /admin sans le bon rôle
-        <RequireRole
-            allowedRoles={['admin', 'moderator']}
-            fallback={<AccessDenied />}
-        >
+        <RequireRole allowedRoles={['admin', 'moderator']} fallback={<AccessDenied />}>
             <div className={styles.wrapper}>
                 <div className="breezy-bg" aria-hidden="true" />
                 <BreezyAtmosphere />
@@ -83,7 +81,6 @@ function AdminPage() {
                 <BottomNav />
 
                 <main className={styles.main} role="main">
-                    {/* En-tête */}
                     <div className={['anim-fade-up', styles.header].join(' ')}>
                         <div className={styles.headerTitle}>
                             <ShieldCheck size={28} strokeWidth={1.8} color="var(--brand)" />
@@ -91,11 +88,10 @@ function AdminPage() {
                         </div>
                         <p className={styles.headerSub}>
                             Connecté en tant que <strong>@{user?.username}</strong>
-                            <span className={ROLE_COLORS[user?.role]}>{user?.role}</span>
+                            <span className={ROLE_COLORS[currentRole]}>{currentRole}</span>
                         </p>
                     </div>
 
-                    {/* Onglets */}
                     <div className={styles.tabs} role="tablist">
                         <button
                             role="tab"
@@ -109,32 +105,21 @@ function AdminPage() {
                             <span className={styles.tabCount}>{messages.length}</span>
                         </button>
 
-                        {/* Onglet Utilisateurs : admin uniquement Fx21 */}
-                        <RequireRole allowedRoles={['admin']}>
-                            <button
-                                role="tab"
-                                id="tab-users"
-                                aria-selected={activeTab === 'users'}
-                                className={[styles.tab, activeTab === 'users' ? styles.tabActive : ''].join(' ')}
-                                onClick={() => setActiveTab('users')}
-                            >
-                                <Users size={16} />
-                                Utilisateurs
-                                <span className={styles.tabCount}>{users.length}</span>
-                            </button>
-                        </RequireRole>
+                        <button
+                            role="tab"
+                            id="tab-users"
+                            aria-selected={activeTab === 'users'}
+                            className={[styles.tab, activeTab === 'users' ? styles.tabActive : ''].join(' ')}
+                            onClick={() => setActiveTab('users')}
+                        >
+                            <Users size={16} />
+                            Utilisateurs
+                            <span className={styles.tabCount}>{users.length}</span>
+                        </button>
                     </div>
 
-                    {/* Panneau Messages */}
                     {activeTab === 'messages' && (
-                        <section
-                            role="tabpanel"
-                            aria-labelledby="tab-messages"
-                            className={['anim-fade-up', styles.panel].join(' ')}
-                        >
-                            <p className={styles.panelNote}>
-                                ℹ️ Les suppressions sont locales (démo). Connecter à <code>DELETE /api/messages/:id</code> quand le back est prêt.
-                            </p>
+                        <section role="tabpanel" aria-labelledby="tab-messages" className={['anim-fade-up', styles.panel].join(' ')}>
                             {messages.length === 0 ? (
                                 <div className={styles.emptyState}>
                                     <MessageSquare size={40} strokeWidth={1.2} />
@@ -152,13 +137,13 @@ function AdminPage() {
                                         <div key={msg.id_message} className={styles.tableRow}>
                                             <div className={styles.userCell}>
                                                 <div className={styles.miniAvatar}>
-                                                    {msg.User.username.charAt(0).toUpperCase()}
+                                                    {(msg.author?.username || '?').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <Link to={`/profile/${msg.User.username}`} className={styles.usernameLink}>
-                                                        @{msg.User.username}
+                                                    <Link to={`/profile/${msg.author?.username}`} className={styles.usernameLink}>
+                                                        @{msg.author?.username || 'inconnu'}
                                                     </Link>
-                                                    <span className={ROLE_COLORS[msg.User.role]}>{msg.User.role}</span>
+                                                    {msg.author?.role && <span className={ROLE_COLORS[msg.author.role]}>{msg.author.role}</span>}
                                                 </div>
                                             </div>
                                             <p className={styles.contentCell}>{msg.content}</p>
@@ -166,7 +151,7 @@ function AdminPage() {
                                             <button
                                                 className={styles.deleteBtn}
                                                 onClick={() => handleDeleteMessage(msg.id_message)}
-                                                aria-label={`Supprimer le message ${msg.id_message}`}
+                                                aria-label="Supprimer le message"
                                                 id={`admin-delete-msg-${msg.id_message}`}
                                             >
                                                 <Trash2 size={14} />
@@ -179,64 +164,89 @@ function AdminPage() {
                         </section>
                     )}
 
-                    {/* Panneau Utilisateurs — admin uniquement */}
                     {activeTab === 'users' && (
-                        <RequireRole allowedRoles={['admin']} fallback={<AccessDenied />}>
-                            <section
-                                role="tabpanel"
-                                aria-labelledby="tab-users"
-                                className={['anim-fade-up', styles.panel].join(' ')}
-                            >
-                                <p className={styles.panelNote}>
-                                    ℹ️ Les modifications de rôle sont locales (démo). Connecter à <code>PUT /api/admin/users/:id/role</code> quand le back est prêt.
-                                </p>
-                                <div className={styles.table}>
-                                    <div className={[styles.tableRow, styles.tableHead].join(' ')}>
-                                        <span>Utilisateur</span>
-                                        <span>Email</span>
-                                        <span>Inscrit le</span>
-                                        <span>Rôle</span>
-                                    </div>
-                                    {users.map(u => (
-                                        <div key={u.id_user} className={styles.tableRow}>
-                                            <div className={styles.userCell}>
-                                                <div className={styles.miniAvatar}>
-                                                    {u.username.charAt(0).toUpperCase()}
-                                                </div>
-                                                <Link to={`/profile/${u.username}`} className={styles.usernameLink}>
-                                                    @{u.username}
-                                                </Link>
-                                            </div>
-                                            <span className={styles.emailCell}>{u.email}</span>
-                                            <time className={styles.dateCell}>{formatDate(u.date_creation)}</time>
-                                            <div className={styles.roleCell}>
-                                                {u.id_user === user?.id_user ? (
-                                                    // Ne peut pas se rétrograder soi-même
-                                                    <span className={[styles.roleBadge, ROLE_COLORS[u.role]].join(' ')}>
-                                                        {u.role} <span className={styles.selfBadge}>(vous)</span>
-                                                    </span>
-                                                ) : (
-                                                    <div className={styles.roleSelect}>
-                                                        <select
-                                                            value={u.role}
-                                                            onChange={e => handleRoleChange(u.id_user, e.target.value)}
-                                                            className={[styles.select, ROLE_COLORS[u.role]].join(' ')}
-                                                            aria-label={`Rôle de @${u.username}`}
-                                                            id={`role-select-${u.id_user}`}
-                                                        >
-                                                            {ROLES.map(r => (
-                                                                <option key={r} value={r}>{r}</option>
-                                                            ))}
-                                                        </select>
-                                                        <ChevronDown size={12} className={styles.selectChevron} />
-                                                    </div>
-                                                )}
+                        <section role="tabpanel" aria-labelledby="tab-users" className={['anim-fade-up', styles.panel].join(' ')}>
+                            <div style={{ position: 'relative', marginBottom: 14, maxWidth: 360 }}>
+                                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #9090b0)' }} />
+                                <input
+                                    type="text"
+                                    value={userSearch}
+                                    onChange={e => setUserSearch(e.target.value)}
+                                    placeholder="Rechercher un utilisateur (pseudo ou e-mail)…"
+                                    aria-label="Rechercher un utilisateur"
+                                    id="admin-user-search"
+                                    style={{
+                                        width: '100%', padding: '9px 12px 9px 36px', borderRadius: 12,
+                                        border: '1px solid rgba(120,100,160,0.2)', background: 'rgba(255,255,255,0.7)',
+                                        fontFamily: 'inherit', fontSize: '0.9rem', color: 'var(--text-primary, #1a1a2e)', outline: 'none',
+                                    }}
+                                />
+                            </div>
+                            <div className={styles.table}>
+                                <div className={[styles.tableRow, styles.tableHead].join(' ')}>
+                                    <span>Utilisateur</span>
+                                    <span>Email</span>
+                                    <span>Rôle</span>
+                                    <span>Action</span>
+                                </div>
+                                {filteredUsers.map(u => (
+                                    <div key={u.id} className={styles.tableRow} style={u.suspended ? { opacity: 0.6 } : undefined}>
+                                        <div className={styles.userCell}>
+                                            <div className={styles.miniAvatar}>{u.username.charAt(0).toUpperCase()}</div>
+                                            <div>
+                                                <Link to={`/profile/${u.username}`} className={styles.usernameLink}>@{u.username}</Link>
+                                                {u.suspended && <span style={{ marginLeft: 6, color: '#dc2626', fontSize: '0.75rem', fontWeight: 600 }}>(suspendu)</span>}
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </section>
-                        </RequireRole>
+                                        <span className={styles.emailCell}>{u.email}</span>
+                                        <div className={styles.roleCell}>
+                                            {u.id === currentId ? (
+                                                <span className={[styles.roleBadge, ROLE_COLORS[u.role]].join(' ')}>
+                                                    {u.role} <span className={styles.selfBadge}>(vous)</span>
+                                                </span>
+                                            ) : currentRole === 'admin' ? (
+                                                <div className={styles.roleSelect}>
+                                                    <select
+                                                        value={u.role}
+                                                        onChange={e => handleRoleChange(u.id, e.target.value)}
+                                                        className={[styles.select, ROLE_COLORS[u.role]].join(' ')}
+                                                        aria-label={`Rôle de @${u.username}`}
+                                                        id={`role-select-${u.id}`}
+                                                    >
+                                                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                                    </select>
+                                                    <ChevronDown size={12} className={styles.selectChevron} />
+                                                </div>
+                                            ) : (
+                                                <span className={[styles.roleBadge, ROLE_COLORS[u.role]].join(' ')}>{u.role}</span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            {canSuspend(u) ? (
+                                                <button
+                                                    onClick={() => handleToggleSuspend(u)}
+                                                    aria-label={u.suspended ? 'Réactiver le compte' : 'Suspendre le compte'}
+                                                    id={`suspend-btn-${u.id}`}
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                        padding: '6px 12px', borderRadius: 10, cursor: 'pointer',
+                                                        fontWeight: 600, fontSize: '0.8rem', border: '1px solid',
+                                                        borderColor: u.suspended ? '#3a8a3a' : '#dc2626',
+                                                        background: u.suspended ? 'rgba(58,138,58,0.1)' : 'rgba(220,38,38,0.1)',
+                                                        color: u.suspended ? '#2f7a2f' : '#dc2626',
+                                                    }}
+                                                >
+                                                    {u.suspended ? <RotateCcw size={14} /> : <Ban size={14} />}
+                                                    {u.suspended ? 'Réactiver' : 'Suspendre'}
+                                                </button>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
                     )}
                 </main>
             </div>
@@ -244,7 +254,6 @@ function AdminPage() {
     )
 }
 
-/** Composant affiché si l'utilisateur tente d'accéder sans le bon rôle */
 function AccessDenied() {
     return (
         <div className={styles.accessDenied}>

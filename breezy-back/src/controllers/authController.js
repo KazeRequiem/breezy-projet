@@ -60,6 +60,10 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: "Identifiants invalides" });
         }
 
+        if (user.suspended) {
+            return res.status(403).json({ message: "Ce compte est suspendu." });
+        }
+
         const token = jwt.sign(
             { id: user._id, role: user.role },
             getJwtSecret(),
