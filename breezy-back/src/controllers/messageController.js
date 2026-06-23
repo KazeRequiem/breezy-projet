@@ -4,6 +4,7 @@ const User = db.User;
 const Follow = db.Follow;
 const { paginateMessages } = require("../utils/paginateMessages");
 const { syncTags } = require("../utils/syncTags");
+const { normalizeTags } = require("../utils/normalizeTag");
 
 exports.create = async (req, res) => {
     try {
@@ -151,6 +152,27 @@ exports.feed = async (req, res) => {
             { author: { $in: followingIds } },
             req.query
         );
+        res.status(200).json(messages);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+exports.search = async (req, res) => {
+    try {
+        const raw = req.query.tags ? req.query.tags.split(",") : [];
+        const tags = normalizeTags(raw);
+ 
+        if (tags.length === 0) {
+            return res.status(200).json([]);
+        }
+ 
+        const messages = await paginateMessages(
+            { tags: { $in: tags } },
+            req.query
+        );
+ 
         res.status(200).json(messages);
     } catch (err) {
         console.error(err);
