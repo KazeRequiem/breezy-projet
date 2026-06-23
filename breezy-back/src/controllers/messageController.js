@@ -3,6 +3,7 @@ const Message = db.Message;
 const User = db.User;
 const Follow = db.Follow;
 const { paginateMessages } = require("../utils/paginateMessages");
+const { syncTags } = require("../utils/syncTags");
 
 exports.create = async (req, res) => {
     try {
@@ -16,11 +17,13 @@ exports.create = async (req, res) => {
             return res.status(400).json({ message: "Le contenu ne peut pas dépasser 280 caractères" });
         }
 
+        const normalizedTags = await syncTags(tags);
+
         const message = await Message.create({
             content,
             image_url: image_url || null,
             video_url: video_url || null,
-            tags: Array.isArray(tags) ? tags : [],
+            tags: normalizedTags,
             author: req.user.id,
         });
 
@@ -89,7 +92,7 @@ exports.update = async (req, res) => {
             req.params.id,
             {
                 content,
-                tags: Array.isArray(tags) ? tags : message.tags,
+                tags: tags !== undefined ? await syncTags(tags) : message.tags,
             },
             { new: true }
         );
@@ -134,7 +137,7 @@ exports.explore = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
- 
+
 // GET /messages/feed?limit=20&before=<date> - Subscribe feed (Fx5)
 exports.feed = async (req, res) => {
     try {
@@ -143,7 +146,7 @@ exports.feed = async (req, res) => {
             return res.status(200).json([]);
         }
         const followingIds = follows.map((f) => f.following);
- 
+
         const messages = await paginateMessages(
             { author: { $in: followingIds } },
             req.query
