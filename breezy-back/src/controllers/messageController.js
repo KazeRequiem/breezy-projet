@@ -2,7 +2,23 @@ const db = require("../models");
 const Message = db.Message;
 const User = db.User;
 const Follow = db.Follow;
+const Reply = db.Reply;
+const Like = db.Like;
 const { paginateMessages } = require("../utils/paginateMessages");
+
+// Collecte récursive de tous les messages-réponses descendants d'un message
+async function collectReplyDescendants(rootId) {
+    const descendants = [];
+    let frontier = [rootId];
+    while (frontier.length > 0) {
+        const links = await Reply.find({ message: { $in: frontier } }, "reply");
+        const childIds = links.map((l) => l.reply);
+        if (childIds.length === 0) break;
+        descendants.push(...childIds);
+        frontier = childIds;
+    }
+    return descendants;
+}
 
 exports.create = async (req, res) => {
     try {
@@ -116,7 +132,15 @@ exports.remove = async (req, res) => {
             return res.status(403).json({ message: "Action non autorisée" });
         }
 
-        await Message.deleteOne({ _id: req.params.id });
+        // Suppression en cascade : le message + toutes ses réponses (récursif),
+        // les liens Reply associés et les likes correspondants.
+        const descendants = await collectReplyDescendants(req.params.id);
+        const allIds = [req.params.id, ...descendants];
+
+        await Reply.deleteMany({ $or: [{ message: { $in: allIds } }, { reply: { $in: allIds } }] });
+        await Like.deleteMany({ message: { $in: allIds } });
+        await Message.deleteMany({ _id: { $in: allIds } });
+
         res.status(200).json({ message: "Message supprimé" });
     } catch (err) {
         console.error(err);
