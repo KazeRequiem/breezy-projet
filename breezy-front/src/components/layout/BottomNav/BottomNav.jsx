@@ -119,23 +119,7 @@ function BottomNav() {
             {/* Suggestions mobiles (au-dessus de la bottomNav) */}
             {mobileSearchOpen && showSuggestions && suggestions.length > 0 && (
                 <div className={[styles.suggestionsMobile, 'anim-fade-up'].join(' ')}>
-                    {suggestions.map(u => (
-                        <button
-                            key={u.username}
-                            className={styles.suggestionItem}
-                            onClick={() => handleSelectUser(u.username)}
-                        >
-                            <div className={styles.suggestionAvatar}>
-                                {u.profile_picture
-                                ? <img src={u.profile_picture} alt={u.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                                : u.username.charAt(0).toUpperCase()}
-                            </div>
-                            <div className={styles.suggestionInfo}>
-                                <span className={styles.suggestionName}>{u.username}</span>
-                                <span className={styles.suggestionHandle}>@{u.username}</span>
-                            </div>
-                        </button>
-                    ))}
+                    <SuggestionList suggestions={suggestions} onSelect={handleSelectUser} />
                 </div>
             )}
             
@@ -216,23 +200,7 @@ function BottomNav() {
                     {/* Suggestions desktop (sous la barre de recherche de la sidebar) */}
                     {showSuggestions && suggestions.length > 0 && (
                         <div className={[styles.suggestionsDesktop, 'anim-fade-up'].join(' ')}>
-                            {suggestions.map(u => (
-                                <button
-                                    key={u.username}
-                                    className={styles.suggestionItem}
-                                    onClick={() => handleSelectUser(u.username)}
-                                >
-                                    <div className={styles.suggestionAvatar}>
-                                        {u.profile_picture
-                                ? <img src={u.profile_picture} alt={u.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                                : u.username.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className={styles.suggestionInfo}>
-                                        <span className={styles.suggestionName}>{u.username}</span>
-                                        <span className={styles.suggestionHandle}>@{u.username}</span>
-                                    </div>
-                                </button>
-                            ))}
+                            <SuggestionList suggestions={suggestions} onSelect={handleSelectUser} />
                         </div>
                     )}
                 </div>
@@ -316,6 +284,27 @@ function NavItem({ path, icon: Icon, label, active }) {
             <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
         </Link>
     )
+}
+
+/** Liste de suggestions de recherche (partagée mobile / desktop) */
+function SuggestionList({ suggestions, onSelect }) {
+    return suggestions.map(u => (
+        <button
+            key={u.username}
+            className={styles.suggestionItem}
+            onClick={() => onSelect(u.username)}
+        >
+            <div className={styles.suggestionAvatar}>
+                {u.profile_picture
+                    ? <img src={u.profile_picture} alt={u.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    : u.username.charAt(0).toUpperCase()}
+            </div>
+            <div className={styles.suggestionInfo}>
+                <span className={styles.suggestionName}>{u.username}</span>
+                <span className={styles.suggestionHandle}>@{u.username}</span>
+            </div>
+        </button>
+    ))
 }
 
 export default BottomNav
