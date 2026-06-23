@@ -5,9 +5,17 @@ jest.mock("../src/models", () => ({
         findById: jest.fn(),
         findByIdAndUpdate: jest.fn(),
         deleteOne: jest.fn(),
+        deleteMany: jest.fn(),
     },
     User: {
         findOne: jest.fn(),
+    },
+    Reply: {
+        find: jest.fn(),
+        deleteMany: jest.fn(),
+    },
+    Like: {
+        deleteMany: jest.fn(),
     },
 }));
 
@@ -127,7 +135,10 @@ describe("messageController.remove", () => {
 
     test("autorise (200) l'auteur a supprimer son message", async () => {
         db.Message.findById.mockResolvedValue({ _id: "m1", author: { toString: () => "u1" } });
-        db.Message.deleteOne.mockResolvedValue({ deletedCount: 1 });
+        db.Reply.find.mockResolvedValue([]);
+        db.Reply.deleteMany.mockResolvedValue({});
+        db.Like.deleteMany.mockResolvedValue({});
+        db.Message.deleteMany.mockResolvedValue({ deletedCount: 1 });
         const req = { params: { id: "m1" }, user: { id: "u1", role: "user" } };
         const res = mockRes();
         await messageController.remove(req, res);
@@ -136,7 +147,10 @@ describe("messageController.remove", () => {
 
     test("autorise (200) un moderateur a supprimer le message d'un autre", async () => {
         db.Message.findById.mockResolvedValue({ _id: "m1", author: { toString: () => "u999" } });
-        db.Message.deleteOne.mockResolvedValue({ deletedCount: 1 });
+        db.Reply.find.mockResolvedValue([]);
+        db.Reply.deleteMany.mockResolvedValue({});
+        db.Like.deleteMany.mockResolvedValue({});
+        db.Message.deleteMany.mockResolvedValue({ deletedCount: 1 });
         const req = { params: { id: "m1" }, user: { id: "u1", role: "moderator" } };
         const res = mockRes();
         await messageController.remove(req, res);
