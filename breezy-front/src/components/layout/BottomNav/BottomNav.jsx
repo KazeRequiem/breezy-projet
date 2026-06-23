@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Home, Compass, Search, Bell, ShieldCheck, User } from 'lucide-react'
 import logoBreezy from '../../../assets/logo-breezy.png'
 import { useAuth } from '../../../contexts/AuthContext'
+import { searchUsers } from '../../../services/userService'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import styles from './BottomNav.module.css'
 
@@ -40,11 +41,30 @@ function BottomNav() {
 
     // États recherche
     const [searchQuery, setSearchQuery] = useState('')
+    const [suggestions, setSuggestions] = useState([])
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
     const searchContainerRef = useRef(null)
     const mobileSearchInputRef = useRef(null)
+    const debounceRef = useRef(null)
+
+    // Recherche API
+    const debouncedSearch = useCallback((query) => {
+        if (debounceRef.current) clearTimeout(debounceRef.current)
+        if (!query.trim()) {
+            setSuggestions([])
+            return
+        }
+        debounceRef.current = setTimeout(async () => {
+            try {
+                const results = await searchUsers(query)
+                setSuggestions(results)
+            } catch {
+                setSuggestions([])
+            }
+        }, 300)
+    }, [])
 
     // Focus automatique quand la recherche mobile s'ouvre
     useEffect(() => {
@@ -60,19 +80,28 @@ function BottomNav() {
                 setShowSuggestions(false)
                 setMobileSearchOpen(false)
                 setSearchQuery('')
+                setSuggestions([])
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
+    // Nettoyage du timeout au démontage
+    useEffect(() => {
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    }, [])
+
     const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value)
+        const value = e.target.value
+        setSearchQuery(value)
         setShowSuggestions(true)
+        debouncedSearch(value)
     }
 
     const handleSelectUser = (userUsername) => {
         setSearchQuery('')
+        setSuggestions([])
         setShowSuggestions(false)
         setMobileSearchOpen(false)
         navigate(`/profile/${userUsername}`)
@@ -81,19 +110,9 @@ function BottomNav() {
     const handleCloseMobileSearch = () => {
         setMobileSearchOpen(false)
         setSearchQuery('')
+        setSuggestions([])
         setShowSuggestions(false)
     }
-
-    // La recherche utilise une liste statique pour la démo.
-    // TODO: remplacer par un appel API /api/users/search?q=... quand disponible
-    const SEARCHABLE_USERS = []
-
-    const suggestions = searchQuery.trim()
-        ? SEARCHABLE_USERS.filter(u =>
-            u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            u.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-        : []
 
     return (
         <div ref={searchContainerRef}>
@@ -107,10 +126,12 @@ function BottomNav() {
                             onClick={() => handleSelectUser(u.username)}
                         >
                             <div className={styles.suggestionAvatar}>
-                                {u.username.charAt(0).toUpperCase()}
+                                {u.profile_picture
+                                ? <img src={u.profile_picture} alt={u.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                                : u.username.charAt(0).toUpperCase()}
                             </div>
                             <div className={styles.suggestionInfo}>
-                                <span className={styles.suggestionName}>{u.name}</span>
+                                <span className={styles.suggestionName}>{u.username}</span>
                                 <span className={styles.suggestionHandle}>@{u.username}</span>
                             </div>
                         </button>
@@ -202,10 +223,12 @@ function BottomNav() {
                                     onClick={() => handleSelectUser(u.username)}
                                 >
                                     <div className={styles.suggestionAvatar}>
-                                        {u.username.charAt(0).toUpperCase()}
+                                        {u.profile_picture
+                                ? <img src={u.profile_picture} alt={u.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                                : u.username.charAt(0).toUpperCase()}
                                     </div>
                                     <div className={styles.suggestionInfo}>
-                                        <span className={styles.suggestionName}>{u.name}</span>
+                                        <span className={styles.suggestionName}>{u.username}</span>
                                         <span className={styles.suggestionHandle}>@{u.username}</span>
                                     </div>
                                 </button>
