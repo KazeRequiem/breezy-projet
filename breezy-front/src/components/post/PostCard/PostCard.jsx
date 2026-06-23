@@ -5,6 +5,7 @@ import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, 
 import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import { deleteMessage } from '../../../services/messageService'
+import { getLikeStatus, likePost, unlikePost } from '../../../services/likeService'
 import styles from './PostCard.module.css'
 
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
@@ -219,10 +220,30 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         setTimeout(() => setToastMessage(''), 3000)
     }
 
-    const handleLikeClick = (e) => {
+    useEffect(() => {
+        let cancelled = false
+        getLikeStatus(id_message)
+            .then(({ likesCount, likedByMe }) => {
+                if (cancelled) return
+                setLikesCount(likesCount)
+                setIsLiked(likedByMe)
+            })
+            .catch(() => {})
+        return () => { cancelled = true }
+    }, [id_message])
+
+    const handleLikeClick = async (e) => {
         e.stopPropagation()
-        setIsLiked(!isLiked)
-        setLikesCount(prev => isLiked ? prev - 1 : prev + 1)
+        const next = !isLiked
+        setIsLiked(next)
+        setLikesCount(prev => prev + (next ? 1 : -1))
+        try {
+            if (next) await likePost(id_message)
+            else await unlikePost(id_message)
+        } catch {
+            setIsLiked(!next)
+            setLikesCount(prev => prev + (next ? -1 : 1))
+        }
     }
 
     if (isDeleted) {
