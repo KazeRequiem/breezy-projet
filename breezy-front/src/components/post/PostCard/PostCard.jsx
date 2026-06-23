@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, X, Send, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
+import { deleteMessage } from '../../../services/messageService'
 import styles from './PostCard.module.css'
 
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
@@ -19,8 +20,14 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         replies_count  = 0,
         tags           = [],
         reply_to       = null,
-        media          = null,
+        media: localMedia = null,
+        image_url      = null,
+        video_url      = null,
     } = post
+
+    const media = localMedia
+        || (image_url ? { type: 'image', url: image_url } : null)
+        || (video_url ? { type: 'video', url: video_url } : null)
 
     const { user } = useAuth()
     const currentLoggedUser = user?.username ?? null
@@ -172,10 +179,16 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         }
     }, [showMenu])
 
-    const handleDelete = (e) => {
+    const handleDelete = async (e) => {
         e.stopPropagation()
-        setIsDeleted(true)
-        showToast('Breeze supprimé avec succès.')
+        setShowMenu(false)
+        try {
+            await deleteMessage(id_message)
+            setIsDeleted(true)
+            showToast('Breeze supprimé avec succès.')
+        } catch {
+            showToast('Erreur lors de la suppression.')
+        }
     }
 
     const handleReport = (e) => {
