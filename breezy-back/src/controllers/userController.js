@@ -6,6 +6,34 @@ const Follow = db.Follow;
 const Message = db.Message;
 
 /**
+ * GET /api/users/search?q=...
+ * Recherche des utilisateurs par nom d'utilisateur (autocomplétion).
+ */
+exports.search = async (req, res) => {
+    try {
+        const q = (req.query.q || "").trim();
+        if (q.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        // éviter les injections
+        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        const users = await User.find({
+            username: { $regex: escaped, $options: "i" },
+        })
+            .select("username profile_picture biography")
+            .limit(10);
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+
+/**
  * GET /api/users/:username
  * Retourne le profil public d'un utilisateur (sans le mot de passe).
  */
