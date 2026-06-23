@@ -38,3 +38,16 @@ export async function createMessage({ content, image_url = null, video_url = nul
     })
     return mapMessage(data)
 }
+
+export async function getReplies(messageId) {
+    const data = await apiFetch(`/api/messages/${messageId}/replies`)
+    return Array.isArray(data) ? data.map(mapMessage) : []
+}
+
+export async function createReply(messageId, content) {
+    const data = await apiFetch(`/api/messages/${messageId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+    })
+    return mapMessage(data.message)
+}

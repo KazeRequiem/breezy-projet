@@ -6,6 +6,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import { deleteMessage } from '../../../services/messageService'
 import { getLikeStatus, likePost, unlikePost } from '../../../services/likeService'
+import { getReplies, createReply } from '../../../services/messageService'
 import styles from './PostCard.module.css'
 
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
@@ -55,6 +56,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
     const [newCommentText, setNewCommentText] = useState('')
     const [replyingTo, setReplyingTo] = useState(null)
     const [expandedComments, setExpandedComments] = useState({})
+    const [repliesLoaded, setRepliesLoaded] = useState(false)
 
     const toggleExpandComment = (commentId) => {
         setExpandedComments(prev => ({
@@ -71,7 +73,22 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         setRepliesCount(replies.length || replies_count)
         setVisibleRepliesCount(2)
         setExpandedComments({})
+        setRepliesLoaded(false)
     }
+
+    useEffect(() => {
+        if (!showReplies || repliesLoaded) return
+        let cancelled = false
+        getReplies(id_message)
+            .then(list => {
+                if (cancelled) return
+                setLocalReplies(list.map(r => ({ ...r, liked: false })))
+                setRepliesCount(list.length)
+                setRepliesLoaded(true)
+            })
+            .catch(() => {})
+        return () => { cancelled = true }
+    }, [showReplies, repliesLoaded, id_message])
 
     const handleLikeComment = (commentId) => {
         setLocalReplies(prev => prev.map(reply => {
@@ -126,40 +143,39 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         )
     }
 
-    const handleCommentSubmit = (e) => {
+    const handleCommentSubmit = async (e) => {
         e.preventDefault()
-        if (!newCommentText.trim()) return
+        const text = newCommentText.trim()
+        if (!text) return
 
-        // ID unique pour éviter tout conflit de clés
-        const commentId = crypto.randomUUID()
-        const newComment = {
-            id_message: commentId,
-            content: newCommentText,
-            date_publication: new Date().toISOString(),
-            author: { id_user: user?.id_user ?? 1, username: currentLoggedUser || 'anonyme', profile_picture: null },
-            likes_count: 0,
-            liked: false,
-            reply_to: replyingTo ? { id_message: replyingTo.id_message, author: { username: replyingTo.username } } : null
-        }
-
-        setLocalReplies(prev => [...prev, newComment])
-        setRepliesCount(prev => prev + 1)
-        
-        if (replyingTo) {
-            // Déplier automatiquement le commentaire parent pour voir la réponse
-            setExpandedComments(prev => ({
-                ...prev,
-                [replyingTo.id_message]: true
-            }))
-        } else {
-            // Afficher tous les commentaires pour que le nouveau commentaire tout en bas soit visible
-            const currentRootCount = localReplies.filter(r => !r.reply_to || r.reply_to.id_message === post.id_message).length
-            setVisibleRepliesCount(currentRootCount + 1)
-        }
-
+        const target = replyingTo
         setNewCommentText('')
         setReplyingTo(null)
-        showToast('Commentaire ajouté ! 🍃')
+
+        try {
+            const created = await createReply(id_message, text)
+            const newComment = {
+                ...created,
+                author: { _id: user?.id, username: currentLoggedUser || 'anonyme', profile_picture: user?.profile_picture ?? null },
+                likes_count: 0,
+                liked: false,
+                reply_to: target ? { id_message: target.id_message, author: { username: target.username } } : null,
+            }
+
+            setLocalReplies(prev => [...prev, newComment])
+            setRepliesCount(prev => prev + 1)
+
+            if (target) {
+                setExpandedComments(prev => ({ ...prev, [target.id_message]: true }))
+            } else {
+                const currentRootCount = localReplies.filter(r => !r.reply_to || r.reply_to.id_message === post.id_message).length
+                setVisibleRepliesCount(currentRootCount + 1)
+            }
+
+            showToast('Commentaire ajouté ! 🍃')
+        } catch {
+            showToast("Erreur lors de l'envoi du commentaire.")
+        }
     }
 
     const menuRef = useRef(null)
