@@ -1,6 +1,7 @@
 jest.mock("../src/models", () => ({
     User: {
         findOne: jest.fn(),
+        find: jest.fn(),
     },
     Follow: {
         countDocuments: jest.fn(),
@@ -93,7 +94,65 @@ describe("userController.getByUsername", () => {
         await userController.getByUsername(req, res);
 
         const payload = res.json.mock.calls[0][0];
-        expect(payload.password).toBeUndefined(); // never pass in clear
-        expect(payload.email).toBeUndefined();    // no email in public
+        expect(payload.password).toBeUndefined();
+        expect(payload.email).toBeUndefined();
+    });
+});
+describe("userController.search", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    function mockSearchChain(result) {
+        const limit = jest.fn().mockResolvedValue(result);
+        const select = jest.fn().mockReturnValue({ limit });
+        db.User.find.mockReturnValue({ select });
+        return { select, limit };
+    }
+
+    test("retourne (200) [] si la query est vide, sans requête", async () => {
+        const req = { query: { q: "   " } };
+        const res = mockRes();
+        await userController.search(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith([]);
+        expect(db.User.find).not.toHaveBeenCalled();
+    });
+
+    test("retourne (200) [] si q est absent", async () => {
+        const req = { query: {} };
+        const res = mockRes();
+        await userController.search(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith([]);
+        expect(db.User.find).not.toHaveBeenCalled();
+    });
+
+    test("recherche 'contient' insensible à la casse + limite 5", async () => {
+        const fake = [{ _id: "u1", username: "flora" }];
+        const chain = mockSearchChain(fake);
+
+        const req = { query: { q: "flo" } };
+        const res = mockRes();
+        await userController.search(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(fake);
+
+        const findArg = db.User.find.mock.calls[0][0];
+        expect(findArg.username.$regex).toBe("flo");
+        expect(findArg.username.$options).toBe("i");
+        expect(chain.limit).toHaveBeenCalledWith(5);
+    });
+
+    test("échappe les caractères spéciaux regex (anti-injection)", async () => {
+        mockSearchChain([]);
+
+        const req = { query: { q: "a.*b" } };
+        const res = mockRes();
+        await userController.search(req, res);
+
+        const findArg = db.User.find.mock.calls[0][0];
+        expect(findArg.username.$regex).toBe("a\\.\\*b");
     });
 });
