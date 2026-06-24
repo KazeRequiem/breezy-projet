@@ -5,6 +5,8 @@ const Follow = db.Follow;
 const Reply = db.Reply;
 const Like = db.Like;
 const { paginateMessages } = require("../utils/paginateMessages");
+const { syncTags } = require("../utils/syncTags");
+const { normalizeTags } = require("../utils/normalizeTag");
 
 // Collecte récursive de tous les messages-réponses descendants d'un message
 async function collectReplyDescendants(rootId) {
@@ -32,11 +34,13 @@ exports.create = async (req, res) => {
             return res.status(400).json({ message: "Le contenu ne peut pas dépasser 280 caractères" });
         }
 
+        const normalizedTags = await syncTags(tags);
+
         const message = await Message.create({
             content,
             image_url: image_url || null,
             video_url: video_url || null,
-            tags: Array.isArray(tags) ? tags : [],
+            tags: normalizedTags,
             author: req.user.id,
         });
 
@@ -105,7 +109,7 @@ exports.update = async (req, res) => {
             req.params.id,
             {
                 content,
-                tags: Array.isArray(tags) ? tags : message.tags,
+                tags: tags !== undefined ? await syncTags(tags) : message.tags,
             },
             { new: true }
         );
@@ -158,7 +162,7 @@ exports.explore = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
- 
+
 // GET /messages/feed?limit=20&before=<date> - Subscribe feed (Fx5)
 exports.feed = async (req, res) => {
     try {
@@ -167,11 +171,32 @@ exports.feed = async (req, res) => {
             return res.status(200).json([]);
         }
         const followingIds = follows.map((f) => f.following);
- 
+
         const messages = await paginateMessages(
             { author: { $in: followingIds } },
             req.query
         );
+        res.status(200).json(messages);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+exports.search = async (req, res) => {
+    try {
+        const raw = req.query.tags ? req.query.tags.split(",") : [];
+        const tags = normalizeTags(raw);
+ 
+        if (tags.length === 0) {
+            return res.status(200).json([]);
+        }
+ 
+        const messages = await paginateMessages(
+            { tags: { $in: tags } },
+            req.query
+        );
+ 
         res.status(200).json(messages);
     } catch (err) {
         console.error(err);

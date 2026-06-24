@@ -9,6 +9,9 @@ router.post("/", verifyToken, messageController.create);
 router.get("/feed", verifyToken, messageController.feed);
 router.get("/explore", verifyToken, messageController.explore);
 //---
+//TagSearch---
+router.get("/search", verifyToken, messageController.search);
+//---
 router.get("/user/:id_user",verifyToken, messageController.getByUser);
 router.get("/profile/:username", verifyToken, messageController.getByUsername);
 router.patch("/:id", verifyToken, messageController.update);

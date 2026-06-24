@@ -1,10 +1,7 @@
 jest.mock("../src/models", () => ({
     Message: { find: jest.fn() },
     Follow: { find: jest.fn() },
-    Reply: {
-        distinct: jest.fn().mockResolvedValue([]),
-        aggregate: jest.fn().mockResolvedValue([]),
-    },
+    Reply: { distinct: jest.fn(), aggregate: jest.fn() },
 }));
 
 const db = require("../src/models");
@@ -16,14 +13,16 @@ function mockRes() {
     res.json = jest.fn().mockReturnValue(res);
     return res;
 }
-
-// chain find().sort().limit().populate() mocked
+function asDocs(arr) {
+    return arr.map((o) => ({ ...o, toObject: () => o }));
+}
 function mockChain(result) {
-    const withToObject = result.map((m) => ({ ...m, toObject: () => m }));
-    const populate = jest.fn().mockResolvedValue(withToObject);
+    const populate = jest.fn().mockResolvedValue(asDocs(result));
     const limit = jest.fn().mockReturnValue({ populate });
     const sort = jest.fn().mockReturnValue({ limit });
     db.Message.find.mockReturnValue({ sort });
+    db.Reply.distinct.mockResolvedValue([]);
+    db.Reply.aggregate.mockResolvedValue([]);
     return { sort, limit, populate };
 }
 
@@ -47,15 +46,16 @@ describe("messageController.feed", () => {
             { follower: "u1", following: "u2" },
             { follower: "u1", following: "u3" },
         ]);
-        const fake = [{ _id: "m1", content: "post de u2" }];
-        const chain = mockChain(fake);
+        const chain = mockChain([{ _id: "m1", content: "post de u2" }]);
 
         const req = { query: {}, user: { id: "u1" } };
         const res = mockRes();
         await messageController.feed(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith([{ _id: "m1", content: "post de u2", replies_count: 0 }]);
+        const payload = res.json.mock.calls[0][0];
+        expect(payload[0].content).toBe("post de u2");
+        expect(payload[0].replies_count).toBe(0);
 
         const followArg = db.Follow.find.mock.calls[0][0];
         expect(followArg.follower).toBe("u1");

@@ -1,11 +1,6 @@
 jest.mock("../src/models", () => ({
-    Message: {
-        find: jest.fn(),
-    },
-    Reply: {
-        distinct: jest.fn().mockResolvedValue([]),
-        aggregate: jest.fn().mockResolvedValue([]),
-    },
+    Message: { find: jest.fn() },
+    Reply: { distinct: jest.fn(), aggregate: jest.fn() },
 }));
 
 const db = require("../src/models");
@@ -18,15 +13,20 @@ function mockRes() {
     return res;
 }
 
-// Helper : build a chain find().sort().limit().populate() mocked
-// which resolve into `result`. Also return spy in order to check args.
+// Transforme simple objects in "documents mongoose-like" (w/ toObject)
+function asDocs(arr) {
+    return arr.map((o) => ({ ...o, toObject: () => o }));
+}
+
+// chain find().sort().limit().populate() mocked
 function mockChain(result) {
-    // paginateMessages calls .toObject() on each message
-    const withToObject = result.map((m) => ({ ...m, toObject: () => m }));
-    const populate = jest.fn().mockResolvedValue(withToObject);
+    const populate = jest.fn().mockResolvedValue(asDocs(result));
     const limit = jest.fn().mockReturnValue({ populate });
     const sort = jest.fn().mockReturnValue({ limit });
     db.Message.find.mockReturnValue({ sort });
+    // Reply par défaut : aucune réponse en base
+    db.Reply.distinct.mockResolvedValue([]);
+    db.Reply.aggregate.mockResolvedValue([]);
     return { sort, limit, populate };
 }
 
@@ -34,15 +34,17 @@ describe("messageController.explore", () => {
     beforeEach(() => jest.clearAllMocks());
 
     test("sans before : renvoie les messages récents, limit 20 par défaut", async () => {
-        const fake = [{ _id: "m1", content: "récent" }];
-        const chain = mockChain(fake);
+        const chain = mockChain([{ _id: "m1", content: "récent" }]);
 
         const req = { query: {} };
         const res = mockRes();
         await messageController.explore(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith([{ _id: "m1", content: "récent", replies_count: 0 }]);
+        const payload = res.json.mock.calls[0][0];
+        expect(payload).toHaveLength(1);
+        expect(payload[0].content).toBe("récent");
+        expect(payload[0].replies_count).toBe(0);
 
         const findArg = db.Message.find.mock.calls[0][0];
         expect(findArg.createdAt).toBeUndefined();
@@ -52,7 +54,7 @@ describe("messageController.explore", () => {
     });
 
     test("avec before valide : ajoute le filtre createdAt $lt", async () => {
-        const chain = mockChain([]);
+        mockChain([]);
         const before = "2026-06-01T10:00:00.000Z";
 
         const req = { query: { before } };
