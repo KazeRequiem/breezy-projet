@@ -10,8 +10,11 @@ jest.mock("../src/models", () => ({
     },
 }));
 
+jest.mock("../src/utils/notify");
+
 const db = require("../src/models");
 const whisperController = require("../src/controllers/whisperController");
+const notify = require("../src/utils/notify");
 
 function mockRes() {
     const res = {};
@@ -69,6 +72,21 @@ describe("whisperController.create", () => {
         expect(arg.message).toBe("m1");
         expect(arg.content).toBe("psst");
     });
+
+    test("notifie l'auteur du message cible (type whisper)", async () => {
+        db.Message.findById.mockResolvedValue({ _id: "m1", author: "u2" });
+        db.Whisper.create.mockImplementation(async (data) => ({ _id: "w1", ...data }));
+        const req = { params: { id: "m1" }, body: { content: "psst" }, user: { id: "u1" } };
+        const res = mockRes();
+        await whisperController.create(req, res);
+
+        expect(notify).toHaveBeenCalledTimes(1);
+        const n = notify.mock.calls[0][0];
+        expect(n.recipient).toBe("u2");
+        expect(n.sender).toBe("u1");
+        expect(n.type).toBe("whisper");
+        expect(n.message).toBe("m1");
+    });
 });
 
 describe("whisperController.getByMessage (visibilite)", () => {
@@ -84,7 +102,6 @@ describe("whisperController.getByMessage (visibilite)", () => {
     });
 
     test("auteur du message : voit TOUS les whispers du message", async () => {
-        // le demandeur u2 EST l'auteur du message
         db.Message.findById.mockResolvedValue({ _id: "m1", author: { toString: () => "u2" } });
         const all = [{ _id: "w1", content: "a" }, { _id: "w2", content: "b" }];
         mockFindChain(all);
@@ -95,14 +112,12 @@ describe("whisperController.getByMessage (visibilite)", () => {
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(all);
-        // filtre : uniquement le message, PAS de filtre author
         const findArg = db.Whisper.find.mock.calls[0][0];
         expect(findArg.message).toBe("m1");
         expect(findArg.author).toBeUndefined();
     });
 
     test("autre user : ne voit QUE ses propres whispers sur ce message", async () => {
-        // le demandeur u1 n'est PAS l'auteur du message (u2)
         db.Message.findById.mockResolvedValue({ _id: "m1", author: { toString: () => "u2" } });
         const mine = [{ _id: "w3", content: "mon whisper", author: "u1" }];
         mockFindChain(mine);
@@ -113,7 +128,6 @@ describe("whisperController.getByMessage (visibilite)", () => {
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(mine);
-        // filtre : message ET author = moi
         const findArg = db.Whisper.find.mock.calls[0][0];
         expect(findArg.message).toBe("m1");
         expect(findArg.author).toBe("u1");

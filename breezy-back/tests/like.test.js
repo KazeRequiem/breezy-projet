@@ -11,8 +11,11 @@ jest.mock("../src/models", () => ({
     },
 }));
 
+jest.mock("../src/utils/notify");
+
 const db = require("../src/models");
 const likeController = require("../src/controllers/likeController");
+const notify = require("../src/utils/notify");
 
 function mockRes() {
     const res = {};

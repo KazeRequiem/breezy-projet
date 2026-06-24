@@ -1,5 +1,6 @@
 const db = require("../models");
 const Follow = db.Follow;
+const notify = require("../utils/notify");
 
 exports.follow = async (req, res) => {
     try {
@@ -16,6 +17,7 @@ exports.follow = async (req, res) => {
         }
 
         const follow = await Follow.create({ follower, following });
+        await notify({ recipient: following, sender: follower, type: "follow" });
         res.status(201).json(follow);
     } catch (err) {
         console.error(err);

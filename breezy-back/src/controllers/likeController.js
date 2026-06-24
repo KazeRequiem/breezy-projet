@@ -1,6 +1,7 @@
 const db = require("../models");
 const Like = db.Like;
 const Message = db.Message;
+const notify = require("../utils/notify");
 
 exports.like = async (req, res) => {
     try {
@@ -18,6 +19,12 @@ exports.like = async (req, res) => {
         }
 
         const like = await Like.create({ user, message });
+        await notify({
+            recipient: existingMessage.author,
+            sender: user,
+            type: "like",
+            message,
+        });
         res.status(201).json(like);
     } catch (err) {
         console.error(err);
