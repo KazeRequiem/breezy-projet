@@ -11,6 +11,18 @@ import styles from './PostCard.module.css'
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
 
 // Carte d'affichage d'un post (Feed principal & Centres d'intérêts)
+const getMarginLeft = (d) => {
+    if (d === 0) return '20px'
+    if (d === 1) return '10px'
+    return '0px'
+}
+
+const getPaddingLeft = (d) => {
+    if (d === 0) return '10px'
+    if (d === 1) return '6px'
+    return '0px'
+}
+
 function PostCard({ post, threadVariant, animDelay = '', compact = false, replies = [], editable = false }) {
     const {
         id_message,
@@ -563,7 +575,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                 })
 
                 return (
-                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')}>
+                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="presentation">
                         
                         {/* Formulaire de commentaire sous le post (affiché uniquement s'il n'y a pas de réponse à un commentaire en cours) */}
                         {!replyingTo && renderCommentForm()}
@@ -616,6 +628,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                     <div 
                         className={[styles.whisperModal, 'anim-fade-up'].join(' ')}
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
                         role="presentation"
                     >
                         <header className={styles.modalHeader}>
@@ -698,27 +711,38 @@ function ReplyNode({
     const children = localReplies.filter(r => r.reply_to && r.reply_to.id_message === reply.id_message)
     const isTargetOfReply = replyingTo && replyingTo.id_message === reply.id_message
     const isExpanded = !!expandedComments[reply.id_message]
+    const hasChildren = children.length > 0
+
+    const handleNodeClick = () => {
+        if (hasChildren) {
+            toggleExpandComment(reply.id_message)
+        }
+    }
+
+    const handleNodeKeyDown = (e) => {
+        if (hasChildren && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault()
+            toggleExpandComment(reply.id_message)
+        }
+    }
+
+    const containerClasses = [
+        depth > 0 ? styles.subReplyItem : styles.replyItem,
+        hasChildren ? styles.clickableReplyItem : ''
+    ].join(' ')
+
+    const marginLeft = getMarginLeft(depth)
+    const paddingLeft = getPaddingLeft(depth)
+    const borderLeft = depth >= 2 ? 'none' : undefined
 
     return (
         <div className={styles.replyNode}>
             <div
-                className={[
-                    depth > 0 ? styles.subReplyItem : styles.replyItem,
-                    children.length > 0 ? styles.clickableReplyItem : ''
-                ].join(' ')}
-                onClick={() => {
-                    if (children.length > 0) {
-                        toggleExpandComment(reply.id_message)
-                    }
-                }}
-                role={children.length > 0 ? "button" : undefined}
-                tabIndex={children.length > 0 ? 0 : undefined}
-                onKeyDown={(e) => {
-                    if (children.length > 0 && (e.key === 'Enter' || e.key === ' ')) {
-                        e.preventDefault()
-                        toggleExpandComment(reply.id_message)
-                    }
-                }}
+                className={containerClasses}
+                onClick={handleNodeClick}
+                role={hasChildren ? "button" : undefined}
+                tabIndex={hasChildren ? 0 : undefined}
+                onKeyDown={handleNodeKeyDown}
             >
                 <ReplyAvatar author={reply.author} depth={depth} styles={styles} />
                 <div className={styles.replyBody}>
@@ -734,7 +758,7 @@ function ReplyNode({
                     </header>
 
                     {reply.reply_to && (
-                        <div className={styles.replyToCommentBadge}>
+                        <div className={styles.replyToCommentBadge} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="presentation">
                             En réponse à{' '}
                             <Link to={`/profile/${reply.reply_to.author.username}`} className={styles.replyLink}>
                                 <strong>@{reply.reply_to.author.username}</strong>
@@ -755,21 +779,17 @@ function ReplyNode({
                     />
 
                     {isTargetOfReply && (
-                        <div className={styles.replyInlineFormWrapper}>
+                        <div className={styles.replyInlineFormWrapper} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="presentation">
                             {renderCommentForm()}
                         </div>
                     )}
                 </div>
             </div>
 
-            {children.length > 0 && isExpanded && (
+            {hasChildren && isExpanded && (
                 <div
                     className={styles.subRepliesList}
-                    style={{
-                        marginLeft: depth === 0 ? '20px' : depth === 1 ? '10px' : '0px',
-                        paddingLeft: depth === 0 ? '10px' : depth === 1 ? '6px' : '0px',
-                        borderLeft: depth >= 2 ? 'none' : undefined
-                    }}
+                    style={{ marginLeft, paddingLeft, borderLeft }}
                 >
                     {children.map(child => (
                         <ReplyNode
@@ -789,6 +809,37 @@ function ReplyNode({
             )}
         </div>
     )
+}
+
+ReplyNode.propTypes = {
+    reply: PropTypes.shape({
+        id_message: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        content: PropTypes.string.isRequired,
+        date_publication: PropTypes.string.isRequired,
+        author: PropTypes.shape({
+            username: PropTypes.string.isRequired,
+            profile_picture: PropTypes.string,
+        }).isRequired,
+        reply_to: PropTypes.shape({
+            id_message: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            author: PropTypes.shape({
+                username: PropTypes.string.isRequired,
+            }),
+        }),
+        liked: PropTypes.bool,
+        likes_count: PropTypes.number,
+    }).isRequired,
+    depth: PropTypes.number.isRequired,
+    localReplies: PropTypes.array.isRequired,
+    replyingTo: PropTypes.shape({
+        id_message: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        username: PropTypes.string,
+    }),
+    expandedComments: PropTypes.object.isRequired,
+    toggleExpandComment: PropTypes.func.isRequired,
+    handleLikeComment: PropTypes.func.isRequired,
+    setReplyingTo: PropTypes.func.isRequired,
+    renderCommentForm: PropTypes.func.isRequired,
 }
 
 function ReplyAvatar({ author, depth, styles }) {
@@ -835,7 +886,7 @@ function ReplyActions({
     styles,
 }) {
     return (
-        <div className={styles.replyActions} onClick={(e) => e.stopPropagation()} role="presentation">
+        <div className={styles.replyActions} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="presentation">
             <button
                 type="button"
                 className={[styles.replyActionBtn, reply.liked ? styles.likedBtn : ''].join(' ')}
