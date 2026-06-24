@@ -12,6 +12,7 @@ import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal
 import SettingsModal   from '../../components/profile/SettingsModal/SettingsModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { getUserByUsername } from '../../services/userService'
+import { getMessagesByUsername } from '../../services/messageService'
 import { getFollowers, getFollowing, followUser, unfollowUser } from '../../services/followService'
 import styles from './ProfilePage.module.css'
 
@@ -68,34 +69,51 @@ function ProfilePage() {
         if (!targetUsername) return
 
         let cancelled = false
-        getUserByUsername(targetUsername)
-            .then(data => {
+
+        async function fetchProfileData() {
+            try {
+                const data = await getUserByUsername(targetUsername)
                 if (cancelled) return
+
                 setProfileUser(data)
                 setBreezesCount(data.breezes_count ?? 0)
                 setFollowersCount(data.followers_count ?? 0)
                 setFollowingCount(data.following_count ?? 0)
                 setLocalPosts([])
 
-                getFollowers(data.id)
-                    .then(followers => {
-                        if (cancelled || !Array.isArray(followers)) return
-                        setFollowersCount(followers.length)
-                        setIsFollowing(followers.some(f => f.follower?._id === user?.id))
-                    })
-                    .catch(() => {})
+                // Fetch messages and follow stats in parallel
+                const [msgsRes, followersRes, followingRes] = await Promise.allSettled([
+                    getMessagesByUsername(targetUsername),
+                    getFollowers(data.id),
+                    getFollowing(data.id)
+                ])
 
-                getFollowing(data.id)
-                    .then(following => {
-                        if (cancelled || !Array.isArray(following)) return
-                        setFollowingCount(following.length)
-                    })
-                    .catch(() => {})
-            })
-            .catch(() => {
+                if (cancelled) return
+
+                if (msgsRes.status === 'fulfilled' && Array.isArray(msgsRes.value)) {
+                    const author = { _id: data.id, username: data.username, profile_picture: data.profile_picture }
+                    const withAuthor = msgsRes.value.map(m => ({ ...m, author }))
+                    setLocalPosts(withAuthor)
+                    setBreezesCount(withAuthor.length)
+                }
+
+                if (followersRes.status === 'fulfilled' && Array.isArray(followersRes.value)) {
+                    setFollowersCount(followersRes.value.length)
+                    setIsFollowing(followersRes.value.some(f => f.follower?._id === user?.id))
+                }
+
+                if (followingRes.status === 'fulfilled' && Array.isArray(followingRes.value)) {
+                    setFollowingCount(followingRes.value.length)
+                }
+
+            } catch {
                 if (!cancelled) setNotFound(true)
-            })
-            .finally(() => { if (!cancelled) setLoading(false) })
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }
+
+        fetchProfileData()
 
         return () => { cancelled = true }
     }, [targetUsername, user?.id])
@@ -237,6 +255,7 @@ function ProfilePage() {
                                         post={post}
                                         replies={post.replies || []}
                                         animDelay={`anim-delay-${i + 1}`}
+                                        editable={isOwn}
                                     />
                                 ))
                             )}
