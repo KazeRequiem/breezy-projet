@@ -23,7 +23,7 @@ const getPaddingLeft = (d) => {
     return '0px'
 }
 
-function PostCard({ post, threadVariant, animDelay = '', compact = false, replies = [] }) {
+function PostCard({ post, threadVariant, animDelay = '', compact = false, replies = [], editable = false }) {
     const {
         id_message,
         content,
