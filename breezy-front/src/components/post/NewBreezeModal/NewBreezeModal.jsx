@@ -31,7 +31,9 @@ function NewBreezeModal({ isOpen, onClose, onPublish }) {
 
         const url = URL.createObjectURL(file)
         const type = file.type.startsWith('image/') ? 'image' : 'video'
-        setMedia({ url, type, file })
+        const reader = new FileReader()
+        reader.onload = (ev) => setMedia({ url, type, file, base64: ev.target.result })
+        reader.readAsDataURL(file)
     }
 
     const handleRemoveMedia = () => {

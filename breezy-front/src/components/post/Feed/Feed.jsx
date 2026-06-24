@@ -1,12 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus } from 'lucide-react'
 import PostCard        from '../PostCard/PostCard'
 import NewBreezeModal  from '../NewBreezeModal/NewBreezeModal'
 import { useAuth } from '../../../contexts/AuthContext'
-import { USE_MOCK, DEMO_POSTS } from '../../../services/mockData'
+import { getExplore, getFeed, createMessage } from '../../../services/messageService'
 import styles from './Feed.module.css'
 
-// Helper pour extraire les hashtags d'un message
 function parseHashtags(text) {
     const regex = /#(\w+)/g
     const matches = []
@@ -17,76 +16,97 @@ function parseHashtags(text) {
     return matches
 }
 
-/** Tags de tendance (table `tag`, agrégat via `categorize`) */
 const TRENDING_TAGS = ['#Breezy', '#UIDesign', '#WebDev', '#React', '#FrontEnd', '#Glass', '#Vite']
+const PAGE_SIZE = 20
 
-/**
- * Feed : Fil d'actualité principal.
- *
- * Les posts sont chargés depuis l'API (TODO: GET /api/messages).
- * En attendant, le fil démarre vide.
- */
+const tabStyle = (active) => ({
+    flex: 1,
+    padding: '8px 12px',
+    borderRadius: 999,
+    border: '1px solid rgba(120,100,160,0.15)',
+    background: active ? 'var(--brand, #3b8cf0)' : 'transparent',
+    color: active ? '#fff' : 'var(--text-secondary, #5a5a7a)',
+    fontWeight: 600,
+    cursor: 'pointer',
+})
+
 function Feed() {
     const { user } = useAuth()
-    // TODO: remplacer par un appel API GET /api/messages (fil chronologique)
-    const [posts, setPosts] = useState(USE_MOCK ? DEMO_POSTS : [])
+    const [mode, setMode] = useState('explore') // 'explore' | 'feed'
+    const [posts, setPosts] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [hasMore, setHasMore] = useState(false)
+    const [error, setError] = useState('')
     const [isComposerOpen, setIsComposerOpen] = useState(false)
 
-    const rootPosts = posts.filter(post => post.reply_to === null)
+    const fetchPage = useCallback(
+        (options) => (mode === 'feed' ? getFeed(options) : getExplore(options)),
+        [mode]
+    )
 
-    // Pré-calcul de la map de replies : O(n) au lieu d'un BFS O(n²) par post
-    const repliesMap = useMemo(() => {
-        const map = new Map()
-        for (const post of posts) {
-            if (post.reply_to !== null) {
-                // Trouver le post racine via remontée de la chaîne
-                let rootId = post.reply_to.id_message
-                // On stocke les replies sous l'ID parent direct
-                if (!map.has(rootId)) map.set(rootId, [])
-                map.get(rootId).push(post)
-            }
-        }
-        // Pour chaque post racine, collecter récursivement toutes les replies
-        const fullMap = new Map()
-        for (const root of posts.filter(p => p.reply_to === null)) {
-            const all = []
-            const queue = [root.id_message]
-            while (queue.length > 0) {
-                const parentId = queue.shift()
-                const children = map.get(parentId) || []
-                for (const child of children) {
-                    all.push(child)
-                    queue.push(child.id_message)
-                }
-            }
-            fullMap.set(root.id_message, all)
-        }
-        return fullMap
-    }, [posts])
+    useEffect(() => {
+        let cancelled = false
+        fetchPage({ limit: PAGE_SIZE })
+            .then(list => {
+                if (cancelled) return
+                setPosts(list)
+                setHasMore(list.length === PAGE_SIZE)
+            })
+            .catch(() => { if (!cancelled) setError("Impossible de charger le fil.") })
+            .finally(() => { if (!cancelled) setLoading(false) })
+        return () => { cancelled = true }
+    }, [fetchPage])
 
-    const handlePublish = (content, media = null) => {
+    const loadMore = useCallback(async () => {
+        const last = posts[posts.length - 1]
+        if (!last) return
+        setLoadingMore(true)
+        try {
+            const list = await fetchPage({ limit: PAGE_SIZE, before: last.date_publication })
+            setPosts(prev => [...prev, ...list])
+            setHasMore(list.length === PAGE_SIZE)
+        } catch {
+            setError("Impossible de charger plus de messages.")
+        } finally {
+            setLoadingMore(false)
+        }
+    }, [posts, fetchPage])
+
+    const handlePublish = async (content, media = null) => {
         if (!user) return
-        const newPost = {
-            id_message: Date.now(),
-            content,
-            date_publication: new Date().toISOString(),
-            author: { id_user: user.id_user, username: user.username, profile_picture: null },
-            likes_count: 0,
-            replies_count: 0,
-            tags: parseHashtags(content),
-            reply_to: null,
-            media,
-            animDelay: ''
+        const image_url = media?.type === 'image' ? media.base64 : null
+        const video_url = media?.type === 'video' ? media.base64 : null
+        try {
+            const created = await createMessage({ content, image_url, video_url, tags: parseHashtags(content) })
+            const post = {
+                ...created,
+                author: { _id: user.id, username: user.username, profile_picture: user.profile_picture ?? null },
+            }
+            setPosts(prev => [post, ...prev])
+        } catch {
+            alert("Erreur lors de la publication. Veuillez réessayer.")
         }
-        setPosts(prev => [newPost, ...prev])
     }
+
+    const handleModeChange = (newMode) => {
+        if (mode === newMode) return
+        setLoading(true)
+        setError('')
+        setPosts([])
+        setMode(newMode)
+    }
+
+    const emptyText = mode === 'feed'
+        ? "Aucun Breeze de vos abonnements. Suivez des gens pour voir leurs messages ici."
+        : "Aucun message pour le moment. Soyez le premier ! 🍃"
 
     return (
         <section className={styles.feed} aria-label="Fil d'actualite">
             <div className={styles.feedHeader}>
                 <h1 className={styles.feedTitle}>Accueil</h1>
-                <button 
-                    className={styles.newBreezyBtn} 
+                <button
+                    className={styles.newBreezyBtn}
                     onClick={() => setIsComposerOpen(true)}
                     id="feed-new-breezy-btn"
                 >
@@ -95,7 +115,15 @@ function Feed() {
                 </button>
             </div>
 
-            {/* Tendances (scroll horizontal mobile, masqué sur desktop) */}
+            <div role="tablist" aria-label="Choisir le fil" style={{ display: 'flex', gap: 8, margin: '4px 0 14px' }}>
+                <button role="tab" aria-selected={mode === 'explore'} onClick={() => handleModeChange('explore')} style={tabStyle(mode === 'explore')}>
+                    Explorer
+                </button>
+                <button role="tab" aria-selected={mode === 'feed'} onClick={() => handleModeChange('feed')} style={tabStyle(mode === 'feed')}>
+                    Abonnements
+                </button>
+            </div>
+
             <div className={styles.trendsMobile} aria-label="Tendances" role="list">
                 {TRENDING_TAGS.map(tag => (
                     <button key={tag} className={styles.trendTag} role="listitem" aria-label={`Tendance ${tag}`}>
@@ -104,23 +132,41 @@ function Feed() {
                 ))}
             </div>
 
-            {/* Liste des posts racines */}
             <div className={styles.postList}>
-                {rootPosts.map((post, i) => (
-                    <PostCard
-                        key={post.id_message}
-                        post={post}
-                        replies={repliesMap.get(post.id_message) || []}
-                        animDelay={i > 0 && i <= 4 ? `anim-delay-${i}` : ''}
-                    />
-                ))}
+                {loading ? (
+                    <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)' }}>Chargement du fil...</p>
+                ) : error ? (
+                    <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)' }}>{error}</p>
+                ) : posts.length === 0 ? (
+                    <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)' }}>{emptyText}</p>
+                ) : (
+                    <>
+                        {posts.map((post, i) => (
+                            <PostCard
+                                key={post.id_message}
+                                post={post}
+                                replies={[]}
+                                animDelay={i > 0 && i <= 4 ? `anim-delay-${i}` : ''}
+                            />
+                        ))}
+                        {hasMore && (
+                            <button
+                                className={styles.newBreezyBtn}
+                                style={{ margin: '16px auto', display: 'block' }}
+                                onClick={loadMore}
+                                disabled={loadingMore}
+                            >
+                                {loadingMore ? 'Chargement...' : 'Voir plus'}
+                            </button>
+                        )}
+                    </>
+                )}
             </div>
 
-            {/* Modal de composition de post */}
-            <NewBreezeModal 
-                isOpen={isComposerOpen} 
-                onClose={() => setIsComposerOpen(false)} 
-                onPublish={handlePublish} 
+            <NewBreezeModal
+                isOpen={isComposerOpen}
+                onClose={() => setIsComposerOpen(false)}
+                onPublish={handlePublish}
             />
         </section>
     )

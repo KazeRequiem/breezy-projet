@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
       default: "user",
     },
     tags: { type: [String], default: [] },
+    suspended: { type: Boolean, default: false },
   },
   { timestamps: true } // crée automatiquement createdAt et updatedAt
 );
