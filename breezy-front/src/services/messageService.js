@@ -44,6 +44,14 @@ export async function getMessagesByUsername(username) {
     return Array.isArray(data) ? data.map(mapMessage) : []
 }
 
+export async function searchMessagesByTags(tags) {
+    const raw = Array.isArray(tags) ? tags : String(tags).split(/[\s,]+/)
+    const clean = raw.map(t => t.replace(/^#/, '').trim().toLowerCase()).filter(Boolean)
+    if (clean.length === 0) return []
+    const data = await apiFetch(`/api/messages/search?tags=${encodeURIComponent(clean.join(','))}`)
+    return Array.isArray(data) ? data.map(mapMessage) : []
+}
+
 export async function createMessage({ content, image_url = null, video_url = null, tags = [] }) {
     const data = await apiFetch('/api/messages', {
         method: 'POST',
