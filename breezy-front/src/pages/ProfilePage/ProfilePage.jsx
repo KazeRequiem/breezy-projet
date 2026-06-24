@@ -69,44 +69,51 @@ function ProfilePage() {
         if (!targetUsername) return
 
         let cancelled = false
-        getUserByUsername(targetUsername)
-            .then(data => {
+
+        async function fetchProfileData() {
+            try {
+                const data = await getUserByUsername(targetUsername)
                 if (cancelled) return
+
                 setProfileUser(data)
                 setBreezesCount(data.breezes_count ?? 0)
                 setFollowersCount(data.followers_count ?? 0)
                 setFollowingCount(data.following_count ?? 0)
                 setLocalPosts([])
 
-                getMessagesByUsername(targetUsername)
-                    .then(list => {
-                        if (cancelled || !Array.isArray(list)) return
-                        const author = { _id: data.id, username: data.username, profile_picture: data.profile_picture }
-                        const withAuthor = list.map(m => ({ ...m, author }))
-                        setLocalPosts(withAuthor)
-                        setBreezesCount(withAuthor.length)
-                    })
-                    .catch(() => {})
+                // Fetch messages and follow stats in parallel
+                const [msgsRes, followersRes, followingRes] = await Promise.allSettled([
+                    getMessagesByUsername(targetUsername),
+                    getFollowers(data.id),
+                    getFollowing(data.id)
+                ])
 
-                getFollowers(data.id)
-                    .then(followers => {
-                        if (cancelled || !Array.isArray(followers)) return
-                        setFollowersCount(followers.length)
-                        setIsFollowing(followers.some(f => f.follower?._id === user?.id))
-                    })
-                    .catch(() => {})
+                if (cancelled) return
 
-                getFollowing(data.id)
-                    .then(following => {
-                        if (cancelled || !Array.isArray(following)) return
-                        setFollowingCount(following.length)
-                    })
-                    .catch(() => {})
-            })
-            .catch(() => {
+                if (msgsRes.status === 'fulfilled' && Array.isArray(msgsRes.value)) {
+                    const author = { _id: data.id, username: data.username, profile_picture: data.profile_picture }
+                    const withAuthor = msgsRes.value.map(m => ({ ...m, author }))
+                    setLocalPosts(withAuthor)
+                    setBreezesCount(withAuthor.length)
+                }
+
+                if (followersRes.status === 'fulfilled' && Array.isArray(followersRes.value)) {
+                    setFollowersCount(followersRes.value.length)
+                    setIsFollowing(followersRes.value.some(f => f.follower?._id === user?.id))
+                }
+
+                if (followingRes.status === 'fulfilled' && Array.isArray(followingRes.value)) {
+                    setFollowingCount(followingRes.value.length)
+                }
+
+            } catch {
                 if (!cancelled) setNotFound(true)
-            })
-            .finally(() => { if (!cancelled) setLoading(false) })
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }
+
+        fetchProfileData()
 
         return () => { cancelled = true }
     }, [targetUsername, user?.id])

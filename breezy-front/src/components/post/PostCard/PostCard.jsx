@@ -4,9 +4,8 @@ import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, X, Send, ChevronDown, ChevronUp, Pencil, Check } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
-import { deleteMessage, updateMessage } from '../../../services/messageService'
+import { deleteMessage, updateMessage, getReplies, createReply } from '../../../services/messageService'
 import { getLikeStatus, likePost, unlikePost } from '../../../services/likeService'
-import { getReplies, createReply } from '../../../services/messageService'
 import styles from './PostCard.module.css'
 
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
@@ -445,7 +444,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
                 {/* Contenu (max 280 chars selon BDD) */}
                 {isEditing ? (
-                    <form onSubmit={handleSaveEdit} style={{ marginBottom: 12 }} onClick={(e) => e.stopPropagation()}>
+                    <form onSubmit={handleSaveEdit} style={{ marginBottom: 12 }}>
                         <textarea
                             value={editText}
                             onChange={(e) => setEditText(e.target.value.slice(0, 280))}
@@ -563,96 +562,27 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                     return !parentExists
                 })
 
-                // Récupère les enfants directs d'un commentaire donné
-                const getChildrenReplies = (commentId) => {
-                    return localReplies.filter(r => r.reply_to && r.reply_to.id_message === commentId)
-                }
-
-                const renderReplyNode = (reply, depth = 0) => {
-                    const children = getChildrenReplies(reply.id_message)
-                    const isTargetOfReply = replyingTo && replyingTo.id_message === reply.id_message
-                    const isExpanded = !!expandedComments[reply.id_message]
-                    
-                    return (
-                        <div key={reply.id_message} className={styles.replyNode}>
-                            <div
-                                className={[
-                                    depth > 0 ? styles.subReplyItem : styles.replyItem,
-                                    children.length > 0 ? styles.clickableReplyItem : ''
-                                ].join(' ')}
-                                onClick={() => {
-                                    if (children.length > 0) {
-                                        toggleExpandComment(reply.id_message)
-                                    }
-                                }}
-                            >
-                                <ReplyAvatar author={reply.author} depth={depth} styles={styles} />
-                                <div className={styles.replyBody}>
-                                    <header className={styles.replyHeader}>
-                                        <Link
-                                            to={`/profile/${reply.author.username}`}
-                                            className={styles.replyUsernameLink}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <span className={styles.replyUsername}>@{reply.author.username}</span>
-                                        </Link>
-                                        <span className={styles.replyTime}>{formatRelativeTime(reply.date_publication)}</span>
-                                    </header>
- 
-                                    {reply.reply_to && (
-                                        <div className={styles.replyToCommentBadge} onClick={(e) => e.stopPropagation()} role="presentation">
-                                            En réponse à{' '}
-                                            <Link to={`/profile/${reply.reply_to.author.username}`} className={styles.replyLink}>
-                                                <strong>@{reply.reply_to.author.username}</strong>
-                                            </Link>
-                                        </div>
-                                    )}
- 
-                                    <p className={styles.replyText}>{reply.content}</p>
- 
-                                    <ReplyActions
-                                        reply={reply}
-                                        childrenCount={children.length}
-                                        isExpanded={isExpanded}
-                                        onLike={() => handleLikeComment(reply.id_message)}
-                                        onReply={() => setReplyingTo({ id_message: reply.id_message, username: reply.author.username })}
-                                        onToggleExpand={() => toggleExpandComment(reply.id_message)}
-                                        styles={styles}
-                                    />
- 
-                                    {isTargetOfReply && (
-                                        <div className={styles.replyInlineFormWrapper} onClick={(e) => e.stopPropagation()} role="presentation">
-                                            {renderCommentForm()}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
- 
-                            {/* Rendu récursif des enfants si déplié (indents successives via CSS) */}
-                            {children.length > 0 && isExpanded && (
-                                <div
-                                    className={styles.subRepliesList}
-                                    style={{
-                                        marginLeft: depth === 0 ? '20px' : depth === 1 ? '10px' : '0px',
-                                        paddingLeft: depth === 0 ? '10px' : depth === 1 ? '6px' : '0px',
-                                        borderLeft: depth >= 2 ? 'none' : undefined
-                                    }}
-                                >
-                                    {children.map(child => renderReplyNode(child, depth + 1))}
-                                </div>
-                            )}
-                        </div>
-                    )
-                }
-
                 return (
-                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')} onClick={(e) => e.stopPropagation()} role="presentation">
+                    <div className={[styles.repliesSection, 'anim-fade-up'].join(' ')}>
                         
                         {/* Formulaire de commentaire sous le post (affiché uniquement s'il n'y a pas de réponse à un commentaire en cours) */}
                         {!replyingTo && renderCommentForm()}
 
                         {rootReplies.length > 0 ? (
-                            rootReplies.slice(0, visibleRepliesCount).map(reply => renderReplyNode(reply, 0))
+                            rootReplies.slice(0, visibleRepliesCount).map(reply => (
+                                <ReplyNode
+                                    key={reply.id_message}
+                                    reply={reply}
+                                    depth={0}
+                                    localReplies={localReplies}
+                                    replyingTo={replyingTo}
+                                    expandedComments={expandedComments}
+                                    toggleExpandComment={toggleExpandComment}
+                                    handleLikeComment={handleLikeComment}
+                                    setReplyingTo={setReplyingTo}
+                                    renderCommentForm={renderCommentForm}
+                                />
+                            ))
                         ) : (
                             <p className={styles.noCommentsText}>Aucun commentaire. Soyez le premier à répondre ! 🍃</p>
                         )}
@@ -754,6 +684,113 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
     )
 }
  
+function ReplyNode({
+    reply,
+    depth,
+    localReplies,
+    replyingTo,
+    expandedComments,
+    toggleExpandComment,
+    handleLikeComment,
+    setReplyingTo,
+    renderCommentForm
+}) {
+    const children = localReplies.filter(r => r.reply_to && r.reply_to.id_message === reply.id_message)
+    const isTargetOfReply = replyingTo && replyingTo.id_message === reply.id_message
+    const isExpanded = !!expandedComments[reply.id_message]
+
+    return (
+        <div className={styles.replyNode}>
+            <div
+                className={[
+                    depth > 0 ? styles.subReplyItem : styles.replyItem,
+                    children.length > 0 ? styles.clickableReplyItem : ''
+                ].join(' ')}
+                onClick={() => {
+                    if (children.length > 0) {
+                        toggleExpandComment(reply.id_message)
+                    }
+                }}
+                role={children.length > 0 ? "button" : undefined}
+                tabIndex={children.length > 0 ? 0 : undefined}
+                onKeyDown={(e) => {
+                    if (children.length > 0 && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault()
+                        toggleExpandComment(reply.id_message)
+                    }
+                }}
+            >
+                <ReplyAvatar author={reply.author} depth={depth} styles={styles} />
+                <div className={styles.replyBody}>
+                    <header className={styles.replyHeader}>
+                        <Link
+                            to={`/profile/${reply.author.username}`}
+                            className={styles.replyUsernameLink}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <span className={styles.replyUsername}>@{reply.author.username}</span>
+                        </Link>
+                        <span className={styles.replyTime}>{formatRelativeTime(reply.date_publication)}</span>
+                    </header>
+
+                    {reply.reply_to && (
+                        <div className={styles.replyToCommentBadge}>
+                            En réponse à{' '}
+                            <Link to={`/profile/${reply.reply_to.author.username}`} className={styles.replyLink}>
+                                <strong>@{reply.reply_to.author.username}</strong>
+                            </Link>
+                        </div>
+                    )}
+
+                    <p className={styles.replyText}>{reply.content}</p>
+
+                    <ReplyActions
+                        reply={reply}
+                        childrenCount={children.length}
+                        isExpanded={isExpanded}
+                        onLike={() => handleLikeComment(reply.id_message)}
+                        onReply={() => setReplyingTo({ id_message: reply.id_message, username: reply.author.username })}
+                        onToggleExpand={() => toggleExpandComment(reply.id_message)}
+                        styles={styles}
+                    />
+
+                    {isTargetOfReply && (
+                        <div className={styles.replyInlineFormWrapper}>
+                            {renderCommentForm()}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {children.length > 0 && isExpanded && (
+                <div
+                    className={styles.subRepliesList}
+                    style={{
+                        marginLeft: depth === 0 ? '20px' : depth === 1 ? '10px' : '0px',
+                        paddingLeft: depth === 0 ? '10px' : depth === 1 ? '6px' : '0px',
+                        borderLeft: depth >= 2 ? 'none' : undefined
+                    }}
+                >
+                    {children.map(child => (
+                        <ReplyNode
+                            key={child.id_message}
+                            reply={child}
+                            depth={depth + 1}
+                            localReplies={localReplies}
+                            replyingTo={replyingTo}
+                            expandedComments={expandedComments}
+                            toggleExpandComment={toggleExpandComment}
+                            handleLikeComment={handleLikeComment}
+                            setReplyingTo={setReplyingTo}
+                            renderCommentForm={renderCommentForm}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
 function ReplyAvatar({ author, depth, styles }) {
     const initial = author.username.charAt(0).toUpperCase()
     return (
