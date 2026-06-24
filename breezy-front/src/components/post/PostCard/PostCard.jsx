@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
-import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, X, Send, ChevronDown, ChevronUp } from 'lucide-react'
+import { Heart, MessageCircle, Wind, MoreHorizontal, Tag, Trash, AlertTriangle, X, Send, ChevronDown, ChevronUp, Pencil, Check } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
-import { deleteMessage } from '../../../services/messageService'
+import { deleteMessage, updateMessage } from '../../../services/messageService'
 import { getLikeStatus, likePost, unlikePost } from '../../../services/likeService'
 import { getReplies, createReply } from '../../../services/messageService'
 import styles from './PostCard.module.css'
@@ -12,7 +12,7 @@ import styles from './PostCard.module.css'
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
 
 // Carte d'affichage d'un post (Feed principal & Centres d'intérêts)
-function PostCard({ post, threadVariant, animDelay = '', compact = false, replies = [] }) {
+function PostCard({ post, threadVariant, animDelay = '', compact = false, replies = [], editable = false }) {
     const {
         id_message,
         content,
@@ -58,6 +58,12 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
     const [expandedComments, setExpandedComments] = useState({})
     const [repliesLoaded, setRepliesLoaded] = useState(false)
 
+    // États édition du message
+    const [contentValue, setContentValue] = useState(content)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editText, setEditText] = useState(content)
+    const [savingEdit, setSavingEdit] = useState(false)
+
     const toggleExpandComment = (commentId) => {
         setExpandedComments(prev => ({
             ...prev,
@@ -74,6 +80,9 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         setVisibleRepliesCount(2)
         setExpandedComments({})
         setRepliesLoaded(false)
+        setContentValue(post.content)
+        setEditText(post.content)
+        setIsEditing(false)
     }
 
     useEffect(() => {
@@ -208,6 +217,35 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         }
     }
 
+    const handleStartEdit = (e) => {
+        e.stopPropagation()
+        setEditText(contentValue)
+        setIsEditing(true)
+        setShowMenu(false)
+    }
+
+    const handleSaveEdit = async (e) => {
+        e.preventDefault()
+        const text = editText.trim()
+        if (!text || text === contentValue) {
+            setIsEditing(false)
+            return
+        }
+        if (text.length > 280) return
+        setSavingEdit(true)
+        try {
+            const tags = (text.match(/#(\w+)/g) || []).map(h => h.slice(1).toLowerCase())
+            await updateMessage(id_message, text, tags)
+            setContentValue(text)
+            setIsEditing(false)
+            showToast('Breeze modifié.')
+        } catch {
+            showToast('Erreur lors de la modification.')
+        } finally {
+            setSavingEdit(false)
+        }
+    }
+
     const handleReport = (e) => {
         e.stopPropagation()
         setIsReported(true)
@@ -329,6 +367,18 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
                         {showMenu && (
                             <div className={[styles.dropdownMenu, 'anim-fade-up'].join(' ')}>
+                                {/* Modifier : auteur du post, uniquement là où l'édition est autorisée (profil) */}
+                                {editable && isOwn && (
+                                    <button
+                                        className={styles.dropdownItem}
+                                        onClick={handleStartEdit}
+                                        id={`edit-btn-${id_message}`}
+                                    >
+                                        <Pencil size={14} />
+                                        <span>Modifier le post</span>
+                                    </button>
+                                )}
+
                                 {/* Supprimer : auteur du post */}
                                 {isOwn && (
                                     <button 
@@ -394,7 +444,35 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                 )}
 
                 {/* Contenu (max 280 chars selon BDD) */}
-                <p className={styles.content}>{content}</p>
+                {isEditing ? (
+                    <form onSubmit={handleSaveEdit} style={{ marginBottom: 12 }} onClick={(e) => e.stopPropagation()}>
+                        <textarea
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value.slice(0, 280))}
+                            maxLength={280}
+                            rows={3}
+                            autoFocus
+                            style={{
+                                width: '100%', resize: 'vertical', borderRadius: 12, padding: '10px 12px',
+                                border: '1px solid rgba(120,100,160,0.3)', fontFamily: 'inherit', fontSize: '0.95rem',
+                                color: 'var(--text-primary, #1a1a2e)', outline: 'none', background: 'rgba(255,255,255,0.8)',
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                            <span style={{ marginRight: 'auto', fontSize: '0.75rem', color: 'var(--text-muted,#9090b0)' }}>{editText.length}/280</span>
+                            <button type="button" onClick={() => setIsEditing(false)} disabled={savingEdit}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', border: '1px solid rgba(120,100,160,0.25)', background: 'transparent', color: 'var(--text-secondary,#5a5a7a)' }}>
+                                <X size={14} /> Annuler
+                            </button>
+                            <button type="submit" disabled={savingEdit || !editText.trim()}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', border: 'none', background: 'var(--brand,#3b8cf0)', color: '#fff', opacity: savingEdit ? 0.7 : 1 }}>
+                                <Check size={14} /> {savingEdit ? 'Enregistrement…' : 'Enregistrer'}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <p className={styles.content}>{contentValue}</p>
+                )}
 
                 {/* Média attaché (Photo ou Vidéo) */}
                 {media && (
@@ -801,6 +879,7 @@ PostCard.propTypes = {
     animDelay: PropTypes.string,
     compact: PropTypes.bool,
     replies: PropTypes.array,
+    editable: PropTypes.bool,
 }
  
 export default PostCard

@@ -12,6 +12,7 @@ import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal
 import SettingsModal   from '../../components/profile/SettingsModal/SettingsModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { getUserByUsername } from '../../services/userService'
+import { getMessagesByUsername } from '../../services/messageService'
 import { getFollowers, getFollowing, followUser, unfollowUser } from '../../services/followService'
 import styles from './ProfilePage.module.css'
 
@@ -76,6 +77,16 @@ function ProfilePage() {
                 setFollowersCount(data.followers_count ?? 0)
                 setFollowingCount(data.following_count ?? 0)
                 setLocalPosts([])
+
+                getMessagesByUsername(targetUsername)
+                    .then(list => {
+                        if (cancelled || !Array.isArray(list)) return
+                        const author = { _id: data.id, username: data.username, profile_picture: data.profile_picture }
+                        const withAuthor = list.map(m => ({ ...m, author }))
+                        setLocalPosts(withAuthor)
+                        setBreezesCount(withAuthor.length)
+                    })
+                    .catch(() => {})
 
                 getFollowers(data.id)
                     .then(followers => {
@@ -237,6 +248,7 @@ function ProfilePage() {
                                         post={post}
                                         replies={post.replies || []}
                                         animDelay={`anim-delay-${i + 1}`}
+                                        editable={isOwn}
                                     />
                                 ))
                             )}

@@ -31,6 +31,19 @@ export async function deleteMessage(id) {
     return apiFetch(`/api/messages/${id}`, { method: 'DELETE' })
 }
 
+export async function updateMessage(id, content, tags) {
+    const data = await apiFetch(`/api/messages/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content, tags }),
+    })
+    return mapMessage(data)
+}
+
+export async function getMessagesByUsername(username) {
+    const data = await apiFetch(`/api/messages/profile/${encodeURIComponent(username)}`)
+    return Array.isArray(data) ? data.map(mapMessage) : []
+}
+
 export async function createMessage({ content, image_url = null, video_url = null, tags = [] }) {
     const data = await apiFetch('/api/messages', {
         method: 'POST',
