@@ -1,5 +1,6 @@
 jest.mock("../src/models", () => ({
     Message: { find: jest.fn() },
+    Reply: { distinct: jest.fn(), aggregate: jest.fn() },
 }));
 
 const db = require("../src/models");
@@ -11,11 +12,16 @@ function mockRes() {
     res.json = jest.fn().mockReturnValue(res);
     return res;
 }
+function asDocs(arr) {
+    return arr.map((o) => ({ ...o, toObject: () => o }));
+}
 function mockChain(result) {
-    const populate = jest.fn().mockResolvedValue(result);
+    const populate = jest.fn().mockResolvedValue(asDocs(result));
     const limit = jest.fn().mockReturnValue({ populate });
     const sort = jest.fn().mockReturnValue({ limit });
     db.Message.find.mockReturnValue({ sort });
+    db.Reply.distinct.mockResolvedValue([]);
+    db.Reply.aggregate.mockResolvedValue([]);
     return { sort, limit, populate };
 }
 
@@ -41,17 +47,17 @@ describe("messageController.search", () => {
     });
 
     test("normalise les tags cherchés et filtre avec $in (OU)", async () => {
-        const fake = [{ _id: "m1", content: "post dofus" }];
-        const chain = mockChain(fake);
+        mockChain([{ _id: "m1", content: "post dofus" }]);
 
         const req = { query: { tags: "Dofus, MMO" } };
         const res = mockRes();
         await messageController.search(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(fake);
+        const payload = res.json.mock.calls[0][0];
+        expect(payload[0].content).toBe("post dofus");
+        expect(payload[0].replies_count).toBe(0);
 
-        // Normalized tags
         const findArg = db.Message.find.mock.calls[0][0];
         expect(findArg.tags.$in).toEqual(["dofus", "mmo"]);
     });
@@ -85,7 +91,6 @@ describe("messageController.search", () => {
 
         const findArg = db.Message.find.mock.calls[0][0];
         expect(findArg.createdAt.$lt).toEqual(new Date(before));
-        // filter tags still there and the cursor
         expect(findArg.tags.$in).toEqual(["dofus"]);
     });
 });
