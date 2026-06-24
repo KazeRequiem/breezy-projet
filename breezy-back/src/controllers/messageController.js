@@ -7,6 +7,7 @@ const Like = db.Like;
 const { paginateMessages } = require("../utils/paginateMessages");
 const { syncTags } = require("../utils/syncTags");
 const { normalizeTags } = require("../utils/normalizeTag");
+const notifyMentions = require("../utils/notifyMentions");
 
 // Collecte récursive de tous les messages-réponses descendants d'un message
 async function collectReplyDescendants(rootId) {
@@ -43,6 +44,8 @@ exports.create = async (req, res) => {
             tags: normalizedTags,
             author: req.user.id,
         });
+
+        await notifyMentions(content, req.user.id, message._id);
 
         res.status(201).json(message);
     } catch (err) {
@@ -136,8 +139,6 @@ exports.remove = async (req, res) => {
             return res.status(403).json({ message: "Action non autorisée" });
         }
 
-        // Suppression en cascade : le message + toutes ses réponses (récursif),
-        // les liens Reply associés et les likes correspondants.
         const descendants = await collectReplyDescendants(req.params.id);
         const allIds = [req.params.id, ...descendants];
 

@@ -9,5 +9,6 @@ router.use("/users", require("./user"));
 router.use("/admin", require("./admin"));
 router.use("/reports",require("./report"));
 router.use("/whispers", require("./whisper"));
+router.use("/notifications", require("./notification"));
 
 module.exports = router;

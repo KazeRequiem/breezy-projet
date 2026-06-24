@@ -20,6 +20,7 @@ jest.mock("../src/models", () => ({
 }));
 
 const db = require("../src/models");
+jest.mock("../src/utils/notifyMentions");
 const messageController = require("../src/controllers/messageController");
 
 function mockRes() {
@@ -186,7 +187,6 @@ describe("messageController.getByUsername", () => {
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(fakeMessages);
-        // on cherche bien les messages de l'_id résolu, pas du username
         const findArg = db.Message.find.mock.calls[0][0];
         expect(findArg.author).toBe("u1");
     });

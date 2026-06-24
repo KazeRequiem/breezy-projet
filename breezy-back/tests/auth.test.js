@@ -46,6 +46,27 @@ describe("authController.register", () => {
         expect(res.status).toHaveBeenCalledWith(409);
     });
 
+    test("refuse (400) un username avec des caractères non autorisés", async () => {
+        const req = { body: { username: "flora dupont!", email: "a@b.com", password: "1234" } };
+        const res = mockRes();
+
+        await authController.register(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(db.User.create).not.toHaveBeenCalled();
+    });
+
+    test("accepte un username alphanumérique avec underscore", async () => {
+        db.User.findOne.mockResolvedValue(null);
+        db.User.create.mockImplementation(async (data) => ({ _id: "u1", ...data }));
+        const req = { body: { username: "flora_99", email: "a@b.com", password: "1234" } };
+        const res = mockRes();
+
+        await authController.register(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+    });
+
     test("crée un user avec un mot de passe hashé", async () => {
         db.User.findOne.mockResolvedValue(null);
         db.User.create.mockImplementation(async (data) => ({ _id: "u1", ...data }));
@@ -56,7 +77,6 @@ describe("authController.register", () => {
         await authController.register(req, res);
 
         expect(res.status).toHaveBeenCalledWith(201);
-        // on vérifie que le mot de passe stocké n'est pas le clair
         const createArg = db.User.create.mock.calls[0][0];
         expect(createArg.password).not.toBe("1234");
         const isHashed = await bcrypt.compare("1234", createArg.password);
