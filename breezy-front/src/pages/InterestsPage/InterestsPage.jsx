@@ -30,12 +30,9 @@ function loadInitialTags() {
 function InterestsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const [selectedTags, setSelectedTags] = useState(loadInitialTags)
-    const [focusTag, setFocusTag] = useState(searchParams.get('tag'))
+    const focusTag = searchParams.get('tag')
     const [postsByTag, setPostsByTag] = useState({}) // { tagLower: [posts] }
     const [showManageDrawer, setShowManageDrawer] = useState(false)
-
-    // L'URL (?tag=) est la source de vérité du tag en focus
-    useEffect(() => { setFocusTag(searchParams.get('tag')) }, [searchParams])
 
     // Charge les posts (via l'API) pour les tags suivis + le tag en focus
     useEffect(() => {
@@ -181,8 +178,16 @@ function TagRow({ tag, posts, onVoirPlus }) {
 function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
     const [tempTags, setTempTags] = useState(selectedTags)
     const [search, setSearch] = useState('')
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
 
-    useEffect(() => { if (isOpen) { setTempTags(selectedTags); setSearch('') } }, [isOpen, selectedTags])
+    // Mise à jour de l'état pendant le rendu (recommandé par React à la place d'un useEffect)
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen)
+        if (isOpen) {
+            setTempTags(selectedTags)
+            setSearch('')
+        }
+    }
 
     if (!isOpen) return null
 
