@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom'
-import { Heart, MessageCircle, UserPlus } from 'lucide-react'
+import { Heart, MessageCircle, UserPlus, Reply, Wind } from 'lucide-react'
 import styles from './NotifItem.module.css'
 
 /**
  * NotifItem : Une ligne de notification.
  *
  * Trois types couverts par la matrice (Fx14, Fx15, Fx16) :
- *   - 'mention'  → Quelqu'un t'a mentionné dans un post
- *   - 'like'     → Quelqu'un a aimé ton post
- *   - 'follower' → Quelqu'un a commencé à te suivre
+ *   - 'mention'  : Quelqu'un t'a mentionné dans un post
+ *   - 'like'     : Quelqu'un a aimé ton post
+ *   - 'follower' : Quelqu'un a commencé à te suivre
  *
  * @param {object}  notif       - Données de la notification
  * @param {string}  notif.type  - 'mention' | 'like' | 'follower'
@@ -72,6 +72,18 @@ const TYPE_CONFIG = {
         bg:    'rgba(34, 197, 94, 0.12)',
         color: '#16a34a',
         text:  'a commencé à te suivre',
+    },
+    reply: {
+        Icon:  Reply,
+        bg:    'rgba(59, 140, 240, 0.12)',
+        color: '#3b8cf0',
+        text:  'a répondu à ton Breezy',
+    },
+    whisper: {
+        Icon:  Wind,
+        bg:    'rgba(232, 163, 61, 0.14)',
+        color: '#e8a33d',
+        text:  't\'a soufflé un Whisper',
     },
 }
 

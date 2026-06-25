@@ -1,83 +1,68 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Bell, Check } from 'lucide-react'
 import TopBar          from '../../components/layout/TopBar/TopBar'
 import BottomNav        from '../../components/layout/BottomNav/BottomNav'
 import TrendingSection  from '../../components/trending/TrendingSection/TrendingSection'
 import BreezyAtmosphere from '../../components/ui/BreezyAtmosphere/BreezyAtmosphere'
 import NotifItem        from '../../components/notifications/NotifItem/NotifItem'
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../../services/notificationService'
 import styles from './NotificationsPage.module.css'
 
-// Données de démonstration Fx14 (mentions), Fx15 (likes), Fx16 (followers)
-const DEMO_NOTIFS = [
-    {
-        id: 1, type: 'mention',
-        from: 'alice_dev',
-        excerpt: 'JWT courte durée + refresh token = le combo...',
-        date: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        read: false,
-    },
-    {
-        id: 2, type: 'like',
-        from: 'marco_ui',
-        excerpt: 'Breezy est rapide et léger...',
-        date: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
-        read: false,
-    },
-    {
-        id: 3, type: 'follower',
-        from: 'elena_wild',
+// Mappe le type backend vers le type d'affichage de NotifItem
+const TYPE_MAP = { follow: 'follower', like: 'like', mention: 'mention', reply: 'reply', whisper: 'whisper' }
+
+function mapNotif(n) {
+    return {
+        id: n._id,
+        type: TYPE_MAP[n.type] || n.type,
+        from: n.sender?.username || 'inconnu',
         excerpt: null,
-        date: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-        read: false,
-    },
-    {
-        id: 4, type: 'like',
-        from: 'thomas_code',
-        excerpt: 'Dark mode = moins de fatigue oculaire...',
-        date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        read: true,
-    },
-    {
-        id: 5, type: 'mention',
-        from: 'sofia_data',
-        excerpt: 'Le front React de Breezy est vraiment propre...',
-        date: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        read: true,
-    },
-    {
-        id: 6, type: 'follower',
-        from: 'kevin_ux',
-        excerpt: null,
-        date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        read: true,
-    },
+        date: n.createdAt,
+        read: !!n.read,
+    }
+}
+
+const FILTERS = [
+    { key: 'all',      label: 'Tout' },
+    { key: 'follower', label: 'Abonnés' },
+    { key: 'like',     label: "J'aime" },
+    { key: 'reply',    label: 'Réponses' },
+    { key: 'mention',  label: 'Mentions' },
+    { key: 'whisper',  label: 'Whispers' },
 ]
 
-/**
- * NotificationsPage : Centre de notifications (Fx14, Fx15, Fx16).
- *
- * Trois filtres en onglets : Tout / Mentions / Likes / Abonnés.
- * Un bouton "Tout marquer comme lu" vide les badges.
- */
 function NotificationsPage() {
-    const [notifs, setNotifs]   = useState(DEMO_NOTIFS)
-    const [filter, setFilter]   = useState('all')
+    const [notifs, setNotifs] = useState([])
+    const [filter, setFilter] = useState('all')
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        let cancelled = false
+        getNotifications()
+            .then(list => {
+                if (cancelled || !Array.isArray(list)) return
+                setNotifs(list.map(mapNotif))
+            })
+            .catch(() => {})
+            .finally(() => { if (!cancelled) setLoading(false) })
+        return () => { cancelled = true }
+    }, [])
 
     const unreadCount = notifs.filter(n => !n.read).length
 
-    const markAllRead = () =>
+    const markAllRead = async () => {
         setNotifs(prev => prev.map(n => ({ ...n, read: true })))
+        try { await markAllNotificationsRead() } catch { /* silencieux */ }
+    }
 
-    const filtered = filter === 'all'
-        ? notifs
-        : notifs.filter(n => n.type === filter)
+    const handleRead = async (id) => {
+        const target = notifs.find(n => n.id === id)
+        if (!target || target.read) return
+        setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+        try { await markNotificationRead(id) } catch { /* silencieux */ }
+    }
 
-    const FILTERS = [
-        { key: 'all',      label: 'Tout' },
-        { key: 'mention',  label: 'Mentions' },
-        { key: 'like',     label: 'Likes' },
-        { key: 'follower', label: 'Abonnés' },
-    ]
+    const filtered = filter === 'all' ? notifs : notifs.filter(n => n.type === filter)
 
     return (
         <div className={styles.wrapper}>
@@ -89,7 +74,6 @@ function NotificationsPage() {
             <div className={styles.layout}>
                 <main className={styles.mainColumn} role="main">
 
-                    {/* En-tête */}
                     <header className={styles.pageHeader}>
                         <div className={styles.titleGroup}>
                             <Bell size={20} color="var(--brand)" strokeWidth={2} aria-hidden="true" />
@@ -115,7 +99,6 @@ function NotificationsPage() {
                         )}
                     </header>
 
-                    {/* Onglets de filtre */}
                     <nav className={styles.filters} aria-label="Filtres des notifications">
                         {FILTERS.map(f => (
                             <button
@@ -130,8 +113,9 @@ function NotificationsPage() {
                         ))}
                     </nav>
 
-                    {/* Liste des notifications */}
-                    {filtered.length === 0 ? (
+                    {loading ? (
+                        <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)' }}>Chargement des notifications…</p>
+                    ) : filtered.length === 0 ? (
                         <div className={styles.emptyBox}>
                             <Bell size={32} strokeWidth={1.4} color="var(--text-muted)" />
                             <p>Aucune notification dans cette catégorie</p>
@@ -139,7 +123,12 @@ function NotificationsPage() {
                     ) : (
                         <div className={styles.list}>
                             {filtered.map((notif, i) => (
-                                <div key={notif.id} className={`anim-fade-up anim-delay-${Math.min(i + 1, 4)}`}>
+                                <div
+                                    key={notif.id}
+                                    className={`anim-fade-up anim-delay-${Math.min(i + 1, 4)}`}
+                                    onClick={() => handleRead(notif.id)}
+                                    role="presentation"
+                                >
                                     <NotifItem notif={notif} />
                                 </div>
                             ))}
