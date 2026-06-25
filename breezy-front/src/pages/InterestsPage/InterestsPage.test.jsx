@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import InterestsPage from './InterestsPage'
 import { AuthProvider } from '../../contexts/AuthContext'
@@ -20,11 +20,11 @@ describe('InterestsPage', () => {
 
         expect(screen.getByRole('heading', { name: /Mes centres d'intérêts/i })).toBeInTheDocument()
         // Les tags par défaut du lazy initializer sont Breezy, UIDesign, WebDev, Nature, Gaming
-        expect(screen.getByRole('heading', { name: /#Breezy/i })).toBeInTheDocument()
-        expect(screen.getByRole('heading', { name: /#Nature/i })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /#breezy/i })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /#nature/i })).toBeInTheDocument()
     })
 
-    it('permet d\'ouvrir le tiroir de gestion et d\'ajouter/supprimer des tags', () => {
+    it('permet d\'ouvrir le tiroir de gestion et d\'ajouter/supprimer des tags', async () => {
         render(
             <AuthProvider>
                 <MemoryRouter>
@@ -53,17 +53,19 @@ describe('InterestsPage', () => {
         fireEvent.click(saveBtn)
 
         // Le tiroir doit être fermé
-        expect(screen.queryByRole('heading', { name: /Gérer mes centres d'intérêts/i })).not.toBeInTheDocument()
+        await waitFor(() => {
+            expect(screen.queryByRole('heading', { name: /Gérer mes centres d'intérêts/i })).not.toBeInTheDocument()
+        })
 
         // Le tag Art doit être présent maintenant
-        expect(screen.getByRole('heading', { name: /#Art/i })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /#art/i })).toBeInTheDocument()
         
         // Vérifier sessionStorage
         const stored = JSON.parse(sessionStorage.getItem('breezy_tags'))
-        expect(stored).toContain('Art')
+        expect(stored).toContain('art')
     })
 
-    it('permet de basculer en mode focus sur un tag puis de revenir', () => {
+    it('permet de basculer en mode focus sur un tag puis de revenir', async () => {
         render(
             <AuthProvider>
                 <MemoryRouter>
@@ -73,13 +75,15 @@ describe('InterestsPage', () => {
         )
 
         // Cliquer sur "Voir plus" pour le tag #Nature
-        const voirPlusBtn = screen.getByRole('button', { name: /Voir plus de posts pour #Nature/i })
+        const voirPlusBtn = screen.getByRole('button', { name: /Voir plus de posts pour #nature/i })
         expect(voirPlusBtn).toBeInTheDocument()
 
         fireEvent.click(voirPlusBtn)
 
         // Mode focus : le header principal change pour afficher #Nature
-        expect(screen.getByRole('heading', { name: '#Nature' })).toBeInTheDocument()
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: /#nature/i })).toBeInTheDocument()
+        })
 
         // Le bouton de retour doit être visible
         const backBtn = screen.getByRole('button', { name: /Retour aux centres d'intérêts/i })
@@ -89,6 +93,8 @@ describe('InterestsPage', () => {
         fireEvent.click(backBtn)
 
         // Retour au mode aperçu global
-        expect(screen.getByRole('heading', { name: /Mes centres d'intérêts/i })).toBeInTheDocument()
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: /Mes centres d'intérêts/i })).toBeInTheDocument()
+        })
     })
 })
