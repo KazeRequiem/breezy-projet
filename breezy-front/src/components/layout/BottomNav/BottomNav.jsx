@@ -5,6 +5,7 @@ import logoBreezy from '../../../assets/logo-breezy.png'
 import { useAuth } from '../../../contexts/AuthContext'
 import { searchUsers } from '../../../services/userService'
 import { searchMessagesByTags } from '../../../services/messageService'
+import { getNotifications } from '../../../services/notificationService'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import styles from './BottomNav.module.css'
 
@@ -45,6 +46,18 @@ function BottomNav() {
     const [suggestions, setSuggestions] = useState([])
     const [searchMode, setSearchMode] = useState('users') // 'users' | 'tags'
     const [showSuggestions, setShowSuggestions] = useState(false)
+    const [unreadNotifs, setUnreadNotifs] = useState(0)
+
+    useEffect(() => {
+        let cancelled = false
+        getNotifications()
+            .then(list => {
+                if (cancelled || !Array.isArray(list)) return
+                setUnreadNotifs(list.filter(n => !n.read).length)
+            })
+            .catch(() => {})
+        return () => { cancelled = true }
+    }, [])
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
     const searchContainerRef = useRef(null)
@@ -271,7 +284,7 @@ function BottomNav() {
                 id="desktop-notif-btn"
             >
                 <Bell size={22} strokeWidth={2} />
-                <span className={styles.badge} />
+                {unreadNotifs > 0 && <span className={styles.badge} />}
             </Link>
         </div>
     )
