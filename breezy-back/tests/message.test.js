@@ -57,6 +57,33 @@ describe("messageController.create", () => {
         expect(createArg.author).toBe("u1");
         expect(createArg.author).not.toBe("fake999");
     });
+
+    test("enregistre le mood fourni s'il est valide", async () => {
+        db.Message.create.mockImplementation(async (data) => ({ _id: "m1", ...data }));
+        const req = { body: { content: "Post", mood: "stormy" }, user: { id: "u1" } };
+        const res = mockRes();
+        await messageController.create(req, res);
+        const createArg = db.Message.create.mock.calls[0][0];
+        expect(createArg.mood).toBe("stormy");
+    });
+
+    test("retombe sur le mood par défaut si mood inconnu", async () => {
+        db.Message.create.mockImplementation(async (data) => ({ _id: "m1", ...data }));
+        const req = { body: { content: "Post", mood: "banane" }, user: { id: "u1" } };
+        const res = mockRes();
+        await messageController.create(req, res);
+        const createArg = db.Message.create.mock.calls[0][0];
+        expect(createArg.mood).toBe("cloudy");
+    });
+
+    test("retombe sur le mood par défaut si aucun mood fourni", async () => {
+        db.Message.create.mockImplementation(async (data) => ({ _id: "m1", ...data }));
+        const req = { body: { content: "Post" }, user: { id: "u1" } };
+        const res = mockRes();
+        await messageController.create(req, res);
+        const createArg = db.Message.create.mock.calls[0][0];
+        expect(createArg.mood).toBe("cloudy");
+    });
 });
 
 describe("messageController.getByUser", () => {
@@ -111,6 +138,26 @@ describe("messageController.update", () => {
         const updateArg = db.Message.findByIdAndUpdate.mock.calls[0][1];
         expect(updateArg.content).toBe("modifié");
         expect(updateArg.tags).toEqual(["news"]);
+    });
+
+    test("change le mood à l'édition si un mood valide est fourni", async () => {
+        db.Message.findById.mockResolvedValue({ _id: "m1", author: { toString: () => "u1" }, tags: [], mood: "cloudy" });
+        db.Message.findByIdAndUpdate.mockResolvedValue({ _id: "m1", content: "modifié", mood: "sunny" });
+        const req = { params: { id: "m1" }, user: { id: "u1" }, body: { content: "modifié", mood: "sunny" } };
+        const res = mockRes();
+        await messageController.update(req, res);
+        const updateArg = db.Message.findByIdAndUpdate.mock.calls[0][1];
+        expect(updateArg.mood).toBe("sunny");
+    });
+
+    test("conserve le mood existant si aucun mood n'est fourni à l'édition", async () => {
+        db.Message.findById.mockResolvedValue({ _id: "m1", author: { toString: () => "u1" }, tags: [], mood: "stormy" });
+        db.Message.findByIdAndUpdate.mockResolvedValue({ _id: "m1", content: "modifié", mood: "stormy" });
+        const req = { params: { id: "m1" }, user: { id: "u1" }, body: { content: "modifié" } };
+        const res = mockRes();
+        await messageController.update(req, res);
+        const updateArg = db.Message.findByIdAndUpdate.mock.calls[0][1];
+        expect(updateArg.mood).toBe("stormy");
     });
 });
 
