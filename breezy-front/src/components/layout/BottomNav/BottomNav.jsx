@@ -10,7 +10,7 @@ import styles from './BottomNav.module.css'
 
 // Liens de la navigation principale
 const NAV_ITEMS = [
-    { path: '/feed',      icon: Home,    label: 'Accueil' },
+    { path: '/feed', icon: Home, label: 'Accueil' },
     { path: '/interests', icon: Compass, label: 'Intérêts' },
 ]
 
@@ -127,12 +127,12 @@ function BottomNav() {
                     <SuggestionList suggestions={suggestions} onSelect={handleSelectUser} mode={searchMode} />
                 </div>
             )}
-            
+
             {/* Mobile : bottom bar */}
             <nav className={[styles.bottomNav, mobileSearchOpen ? styles.bottomNavExpanded : ''].join(' ')} aria-label="Navigation principale">
-                <NavItem path="/feed"      icon={Home}    label="Accueil"   active={pathname === '/feed'} />
-                <NavItem path="/interests" icon={Compass} label="Intérêts"  active={pathname === '/interests'} />
-                
+                <NavItem path="/feed" icon={Home} label="Accueil" active={pathname === '/feed'} />
+                <NavItem path="/interests" icon={Compass} label="Intérêts" active={pathname === '/interests'} />
+
                 {/* Bouton profil (3ème position) */}
                 <Link
                     to={username ? `/profile/${username}` : '/login'}
@@ -148,8 +148,8 @@ function BottomNav() {
                 {/* Recherche rétractable (4ème position) */}
                 {mobileSearchOpen ? (
                     <div className={styles.searchInputWrapper} role="search">
-                        <button 
-                            className={styles.navItemBtn} 
+                        <button
+                            className={styles.navItemBtn}
                             onClick={handleCloseMobileSearch}
                             aria-label="Fermer la recherche"
                             type="button"
@@ -161,7 +161,7 @@ function BottomNav() {
                             ref={mobileSearchInputRef}
                             id="search-mobile"
                             type="text"
-                            placeholder="Rechercher (@pseudo ou #tag)…"
+                            placeholder="Rechercher"
                             aria-label="Champ de recherche"
                             value={searchQuery}
                             onChange={handleSearchChange}
@@ -211,7 +211,7 @@ function BottomNav() {
                 </div>
 
                 {/* Profil utilisateur en haut à gauche (sous la recherche dans la sidebar) */}
-                <Link 
+                <Link
                     to={username ? `/profile/${username}` : '/login'}
                     className={styles.sidebarProfile}
                     aria-label="Mon profil"
@@ -264,8 +264,8 @@ function BottomNav() {
             </aside>
 
             {/* Desktop : bouton notif flottant en haut à droite */}
-            <Link 
-                to="/notifs" 
+            <Link
+                to="/notifs"
                 className={styles.desktopNotifBtn}
                 aria-label="Notifications"
                 id="desktop-notif-btn"
