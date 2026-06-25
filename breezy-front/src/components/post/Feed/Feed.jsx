@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import PostCard        from '../PostCard/PostCard'
 import NewBreezeModal  from '../NewBreezeModal/NewBreezeModal'
@@ -126,9 +127,15 @@ function Feed() {
 
             <div className={styles.trendsMobile} aria-label="Tendances" role="list">
                 {TRENDING_TAGS.map(tag => (
-                    <button key={tag} className={styles.trendTag} role="listitem" aria-label={`Tendance ${tag}`}>
+                    <Link
+                        key={tag}
+                        to={`/interests?tag=${encodeURIComponent(tag.replace(/^#/, '').toLowerCase())}`}
+                        className={styles.trendTag}
+                        role="listitem"
+                        aria-label={`Tendance ${tag}`}
+                    >
                         {tag}
-                    </button>
+                    </Link>
                 ))}
             </div>
 
