@@ -23,7 +23,6 @@ function mockRes() {
     return res;
 }
 
-// chain find().populate() mocked -> resolves into result
 function mockFindChain(result) {
     const populate = jest.fn().mockResolvedValue(result);
     db.Whisper.find.mockReturnValue({ populate });
@@ -71,6 +70,26 @@ describe("whisperController.create", () => {
         expect(arg.author).toBe("u1");
         expect(arg.message).toBe("m1");
         expect(arg.content).toBe("psst");
+    });
+
+    test("enregistre le mood fourni s'il est valide", async () => {
+        db.Message.findById.mockResolvedValue({ _id: "m1", author: "u2" });
+        db.Whisper.create.mockImplementation(async (data) => ({ _id: "w1", ...data }));
+        const req = { params: { id: "m1" }, body: { content: "psst", mood: "teasing" }, user: { id: "u1" } };
+        const res = mockRes();
+        await whisperController.create(req, res);
+        const arg = db.Whisper.create.mock.calls[0][0];
+        expect(arg.mood).toBe("teasing");
+    });
+
+    test("retombe sur le mood par défaut si mood absent ou inconnu", async () => {
+        db.Message.findById.mockResolvedValue({ _id: "m1", author: "u2" });
+        db.Whisper.create.mockImplementation(async (data) => ({ _id: "w1", ...data }));
+        const req = { params: { id: "m1" }, body: { content: "psst", mood: "banane" }, user: { id: "u1" } };
+        const res = mockRes();
+        await whisperController.create(req, res);
+        const arg = db.Whisper.create.mock.calls[0][0];
+        expect(arg.mood).toBe("cloudy");
     });
 
     test("notifie l'auteur du message cible (type whisper)", async () => {

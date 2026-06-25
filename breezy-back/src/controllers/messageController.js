@@ -8,8 +8,8 @@ const { paginateMessages } = require("../utils/paginateMessages");
 const { syncTags } = require("../utils/syncTags");
 const { normalizeTags } = require("../utils/normalizeTag");
 const notifyMentions = require("../utils/notifyMentions");
+const { sanitizeMood } = require("../utils/moods");
 
-// Collecte récursive de tous les messages-réponses descendants d'un message
 async function collectReplyDescendants(rootId) {
     const descendants = [];
     let frontier = [rootId];
@@ -25,7 +25,7 @@ async function collectReplyDescendants(rootId) {
 
 exports.create = async (req, res) => {
     try {
-        const { content, image_url, video_url, tags } = req.body;
+        const { content, image_url, video_url, tags, mood } = req.body;
 
         if (!content || content.trim().length === 0) {
             return res.status(400).json({ message: "Le contenu est requis" });
@@ -42,6 +42,7 @@ exports.create = async (req, res) => {
             image_url: image_url || null,
             video_url: video_url || null,
             tags: normalizedTags,
+            mood: sanitizeMood(mood),
             author: req.user.id,
         });
 
@@ -99,7 +100,7 @@ exports.update = async (req, res) => {
             return res.status(403).json({ message: "Vous ne pouvez modifier que vos propres messages" });
         }
 
-        const { content, tags } = req.body;
+        const { content, tags, mood } = req.body;
 
         if (!content || content.trim().length === 0) {
             return res.status(400).json({ message: "Le contenu est requis" });
@@ -113,6 +114,7 @@ exports.update = async (req, res) => {
             {
                 content,
                 tags: tags !== undefined ? await syncTags(tags) : message.tags,
+                mood: mood !== undefined ? sanitizeMood(mood) : message.mood,
             },
             { new: true }
         );

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { MOODS, DEFAULT_MOOD } = require("../utils/moods");
 
 const messageSchema = new mongoose.Schema(
   {
@@ -8,6 +9,7 @@ const messageSchema = new mongoose.Schema(
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     warn: { type: Number, default: 0 },
     tags: { type: [String], default: [] },
+    mood: { type: String, enum: MOODS, default: DEFAULT_MOOD },
   },
   { timestamps: true }
 );
