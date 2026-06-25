@@ -9,7 +9,10 @@ const options = {
       version: "1.0.0",
       description: "API du réseau social Breezy",
     },
-    servers: [{ url: `http://localhost:${env.port}` }],
+    servers: [
+      { url: "https://breezy.badeline.ovh", description: "Production" },
+      { url: `http://localhost:${env.port}`, description: "Local" },
+    ],
     components: {
       securitySchemes: {
         bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },

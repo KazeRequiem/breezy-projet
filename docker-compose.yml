@@ -1,13 +1,12 @@
 services:
   mongodb:
     image: mongo:7
+    container_name: breezy-mongodb
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DB}
-    ports:
-      - "27017:27017"
     volumes:
       - mongodata:/data/db
     healthcheck:
@@ -15,15 +14,18 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - breezy_network
 
   mongo-express:
     image: mongo-express:latest
+    container_name: breezy-mongo-express
     restart: unless-stopped
     depends_on:
       mongodb:
         condition: service_healthy
     ports:
-      - "8000:8081"
+      - "127.0.0.1:8000:8081"
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
@@ -31,14 +33,15 @@ services:
       ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
       ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD}
     entrypoint: ["/bin/sh", "-c", "until nc -z mongodb 27017; do sleep 1; done; node app"]
+    networks:
+      - breezy_network
 
   vault:
     image: hashicorp/vault:1.18
+    container_name: breezy-vault
     restart: unless-stopped
     cap_add:
       - IPC_LOCK
-    ports:
-      - "8200:8200"
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN}
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
@@ -48,9 +51,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - breezy_network
 
   vault-init:
     build: ./breezy-back
+    container_name: breezy-vault-init
     depends_on:
       vault:
         condition: service_healthy
@@ -60,9 +66,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
     command: ["node", "initVault.js"]
     restart: "no"
+    networks:
+      - breezy_network
 
   back:
     build: ./breezy-back
+    container_name: breezy-back
     restart: unless-stopped
     depends_on:
       mongodb:
@@ -77,32 +86,19 @@ services:
       VAULT_TOKEN: ${VAULT_TOKEN}
       APP_PORT: ${APP_PORT}
       CORS_ORIGIN: ${CORS_ORIGIN}
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./breezy-back:/app
-      - /app/node_modules
-
-  swagger:
-    image: swaggerapi/swagger-ui
-    restart: unless-stopped
-    ports:
-      - "8081:8080"
-    environment:
-      SWAGGER_JSON: /openapi/openapi.yaml
-    volumes:
-      - ./openapi:/openapi
+    networks:
+      - breezy_network
+      - media_net
 
   front:
     build: ./breezy-front
+    container_name: breezy-front
     restart: unless-stopped
     depends_on:
       - back
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./breezy-front:/app
-      - /app/node_modules
+    networks:
+      - breezy_network
+      - media_net
 
 volumes:
   mongodata:
@@ -110,3 +106,5 @@ volumes:
 networks:
   breezy_network:
     driver: bridge
+  media_net:
+    external: true
