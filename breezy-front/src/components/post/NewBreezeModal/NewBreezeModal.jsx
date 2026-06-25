@@ -1,10 +1,12 @@
 import { useState, useRef, useCallback } from 'react'
 import { X, Send, PenTool, Image as ImageIcon } from 'lucide-react'
+import { MOODS } from '../../../utils/moods'
 import styles from './NewBreezeModal.module.css'
 
 function NewBreezeModal({ isOpen, onClose, onPublish }) {
     const [content, setContent] = useState('')
     const [media, setMedia] = useState(null)
+    const [mood, setMood] = useState('cloudy')
     const [status, setStatus] = useState('idle') // 'idle' | 'publishing' | 'published'
     
     const fileInputRef = useRef(null)
@@ -22,6 +24,7 @@ function NewBreezeModal({ isOpen, onClose, onPublish }) {
         clearTimeouts()
         setContent('')
         setMedia(null)
+        setMood('cloudy')
         setStatus('idle')
     }, [clearTimeouts])
 
@@ -56,7 +59,7 @@ function NewBreezeModal({ isOpen, onClose, onPublish }) {
         publishingTimeoutRef.current = setTimeout(() => {
             setStatus('published')
             closeTimeoutRef.current = setTimeout(() => {
-                onPublish(content, media)
+                onPublish(content, media, mood)
                 onClose()
             }, 800)
         }, 1000)
@@ -132,6 +135,25 @@ function NewBreezeModal({ isOpen, onClose, onPublish }) {
                         </div>
                     )}
                     
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '4px 0 2px' }}>
+                        <label htmlFor="mood-select" style={{ fontSize: '0.85rem', color: 'var(--text-secondary,#5a5a7a)' }}>Humeur :</label>
+                        <select
+                            id="mood-select"
+                            value={mood}
+                            onChange={(e) => setMood(e.target.value)}
+                            disabled={status !== 'idle'}
+                            style={{
+                                flex: 1, padding: '8px 10px', borderRadius: 10,
+                                border: '1px solid rgba(120,100,160,0.25)', background: 'rgba(255,255,255,0.7)',
+                                fontFamily: 'inherit', fontSize: '0.9rem', color: 'var(--text-primary,#1a1a2e)', cursor: 'pointer',
+                            }}
+                        >
+                            {MOODS.map(m => (
+                                <option key={m.id} value={m.id}>{m.emoji}  {m.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className={styles.footer}>
                         <div className={styles.attachmentButtons}>
                             <button

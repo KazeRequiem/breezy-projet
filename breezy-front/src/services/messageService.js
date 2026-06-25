@@ -52,10 +52,10 @@ export async function searchMessagesByTags(tags) {
     return Array.isArray(data) ? data.map(mapMessage) : []
 }
 
-export async function createMessage({ content, image_url = null, video_url = null, tags = [] }) {
+export async function createMessage({ content, image_url = null, video_url = null, tags = [], mood }) {
     const data = await apiFetch('/api/messages', {
         method: 'POST',
-        body: JSON.stringify({ content, image_url, video_url, tags }),
+        body: JSON.stringify({ content, image_url, video_url, tags, mood }),
     })
     return mapMessage(data)
 }
