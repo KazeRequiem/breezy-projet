@@ -1,0 +1,37 @@
+/* Groupe comprenant un post parent et son fil de réponses */
+
+/* Conteneur général du thread */
+.threadGroup {
+    display: flex;
+    flex-direction: column;
+    /* Pas d'espace entre les éléments pour pouvoir souder les cartes visuellement */
+}
+
+/* Bloc englobant le connecteur et la carte réponse */
+.replyBlock {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Petite ligne verticale reliant l'avatar du haut à celui du dessous */
+.connector {
+    /*
+      On calcule le retrait (33px) pour centrer le fil vertical
+      pile au milieu de l'avatar du post parent
+    */
+    padding-left: 33px;
+    height: 10px;
+    display: flex;
+    align-items: stretch;
+}
+
+.connectorLine {
+    width: 2px;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(
+        to bottom,
+        rgba(120, 100, 160, 0.30),
+        rgba(120, 100, 160, 0.20)
+    );
+}

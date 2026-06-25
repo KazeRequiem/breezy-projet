@@ -1,0 +1,146 @@
+/* Même base que FeedPage / InterestsPage */
+.wrapper {
+    position: relative;
+    min-height: 100dvh;
+    overflow-x: hidden;
+}
+
+.layout {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    padding-top: 62px;
+    padding-bottom: 90px;
+    min-height: 100dvh;
+}
+
+.mainColumn {
+    flex: 1;
+    padding: 20px 16px;
+    overflow-y: auto;
+}
+
+.rightColumn { display: none; }
+
+/* Carte blanche qui enveloppe header + stats */
+.profileCard {
+    background: rgba(255, 255, 255, 0.60);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(120, 100, 160, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    overflow: hidden; /* Pour que la bannière respecte les coins arrondis */
+    margin-bottom: 20px;
+}
+
+/* Légère marge interne pour les stats */
+.statsWrap {
+    padding: 0 16px 20px;
+}
+
+/* Titre "Derniers Breezes" */
+.sectionTitle {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+}
+
+.postList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+    .layout {
+        flex-direction: row;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-left: var(--sidebar-width, 240px);
+        align-items: flex-start;
+    }
+
+    .mainColumn {
+        flex: 1;
+        max-width: 640px;
+        padding: 28px 24px;
+        margin: 0 auto;
+    }
+
+    .rightColumn {
+        display: block;
+        width: 300px;
+        flex-shrink: 0;
+        padding: 28px 16px 28px 0;
+        position: sticky;
+        top: 0;
+        max-height: 100dvh;
+        overflow-y: auto;
+    }
+}
+
+@media (min-width: 1200px) {
+    .rightColumn { width: 340px; }
+}
+
+/* Page Profil Introuvable (404) */
+.notFoundCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 24px;
+    border-radius: 24px;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(120, 100, 160, 0.08);
+}
+
+.notFoundTitle {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 16px 0 8px;
+    letter-spacing: -0.01em;
+}
+
+.notFoundText {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+.backHomeBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    border-radius: 999px;
+    background: var(--brand, #3b8cf0);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+    box-shadow: 0 4px 14px rgba(59, 140, 240, 0.2);
+}
+.backHomeBtn:hover {
+    background: var(--brand-dark, #2b6fd6);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(59, 140, 240, 0.3);
+}
+.backHomeBtn:active {
+    transform: translateY(1px);
+}

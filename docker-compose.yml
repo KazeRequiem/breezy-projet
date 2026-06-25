@@ -1,0 +1,112 @@
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:latest
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "8000:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD}
+    entrypoint: ["/bin/sh", "-c", "until nc -z mongodb 27017; do sleep 1; done; node app"]
+
+  vault:
+    image: hashicorp/vault:1.18
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    command: server -dev
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  vault-init:
+    build: ./breezy-back
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_TOKEN}
+      JWT_SECRET: ${JWT_SECRET}
+    command: ["node", "initVault.js"]
+    restart: "no"
+
+  back:
+    build: ./breezy-back
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+      vault-init:
+        condition: service_completed_successfully
+    environment:
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/${MONGO_DB}?authSource=admin
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_TOKEN}
+      APP_PORT: ${APP_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./breezy-back:/app
+      - /app/node_modules
+
+  swagger:
+    image: swaggerapi/swagger-ui
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      SWAGGER_JSON: /openapi/openapi.yaml
+    volumes:
+      - ./openapi:/openapi
+
+  front:
+    build: ./breezy-front
+    restart: unless-stopped
+    depends_on:
+      - back
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./breezy-front:/app
+      - /app/node_modules
+
+volumes:
+  mongodata:
+
+networks:
+  breezy_network:
+    driver: bridge

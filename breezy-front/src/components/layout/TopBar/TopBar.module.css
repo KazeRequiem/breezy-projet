@@ -1,0 +1,91 @@
+/* La barre du haut en mobile (invisible sur desktop), avec un petit effet de flou transparent */
+
+.topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 62px;
+
+    background: rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.50);
+}
+
+
+
+/* Logo aligné à gauche */
+.logoLink {
+    display: flex;
+    align-items: center;
+}
+.logo {
+    height: 42px;
+    width: auto;
+    filter: drop-shadow(0 2px 6px rgba(59, 140, 240, 0.28));
+}
+
+/* Cloche de notif à droite */
+.notifLink {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    transition: color 150ms ease, transform 150ms ease, background 150ms ease;
+}
+.notifLink:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.45);
+    transform: scale(1.08);
+}
+.notifLink:active {
+    transform: scale(0.95);
+}
+
+/* Badge de notification (point rouge) */
+.badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff4d4f;
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 4px rgba(255, 77, 79, 0.4);
+}
+
+/* Groupe d'icônes à droite (admin + notifs) */
+.rightActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Lien Admin (bouclier) — visible seulement pour admin/moderator */
+.adminLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--brand);
+    transition: color 150ms ease, transform 150ms ease, background 150ms ease;
+}
+.adminLink:hover {
+    background: rgba(59, 140, 240, 0.12);
+    transform: scale(1.08);
+}
+
+@media (min-width: 768px) {
+    .topbar { display: none; }
+}

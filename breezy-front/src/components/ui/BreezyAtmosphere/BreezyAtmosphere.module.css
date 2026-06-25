@@ -1,0 +1,76 @@
+/* Arrière-plan animé global (l'identité visuelle "Breezy") */
+
+.atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+    contain: layout style;
+}
+
+/* Les bulles de couleur floues qui flottent doucement */
+.halo {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    filter: blur(30px);
+}
+
+.halo1 {
+    width: 340px;
+    height: 340px;
+    top: -60px;
+    right: 8%;
+}
+
+.halo2 {
+    width: 240px;
+    height: 240px;
+    bottom: 12%;
+    left: -50px;
+}
+
+@keyframes haloFloat {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(18px, 14px); }
+}
+
+/* Les petites traînées blanches qui miment le vent qui passe */
+.windStreak {
+    position: absolute;
+    height: 1.5px;
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.28) 45%,
+        rgba(255, 255, 255, 0.16) 70%,
+        transparent 100%
+    );
+    will-change: transform, opacity;
+    animation: windFlow linear infinite;
+}
+
+.ws1 {
+    width: 240px;
+    top: 22%;
+    left: -260px;
+    animation-duration: 6s;
+}
+
+.ws2 {
+    width: 180px;
+    top: 60%;
+    left: -200px;
+    animation-duration: 8s;
+    animation-delay: 2.5s;
+    opacity: 0.7;
+}
+
+@keyframes windFlow {
+    from { transform: translateX(0); opacity: 0; }
+    8%   { opacity: 1; }
+    92%  { opacity: 1; }
+    to   { transform: translateX(calc(100vw + 280px)); opacity: 0; }
+}
