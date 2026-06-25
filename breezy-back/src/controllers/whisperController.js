@@ -2,7 +2,9 @@ const db = require("../models");
 const Whisper = db.Whisper;
 const Message = db.Message;
 const notify = require("../utils/notify");
+const { sanitizeMood } = require("../utils/moods");
 
+// POST /messages/:id/whispers — whisper a private message on a post (Fx17)
 exports.create = async (req, res) => {
     try {
         const messageId = req.params.id;
@@ -12,7 +14,7 @@ exports.create = async (req, res) => {
             return res.status(404).json({ message: "Message introuvable" });
         }
 
-        const { content } = req.body;
+        const { content, mood } = req.body;
         if (!content || content.trim().length === 0) {
             return res.status(400).json({ message: "Le contenu est requis" });
         }
@@ -24,6 +26,7 @@ exports.create = async (req, res) => {
             content,
             author: req.user.id,
             message: messageId,
+            mood: sanitizeMood(mood),
         });
 
         await notify({
@@ -67,6 +70,7 @@ exports.getByMessage = async (req, res) => {
     }
 };
 
+// DELETE /whispers/:id — Delete is own whisper
 exports.remove = async (req, res) => {
     try {
         const whisper = await Whisper.findById(req.params.id);
