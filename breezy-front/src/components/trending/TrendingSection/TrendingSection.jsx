@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { TrendingUp, Hash } from 'lucide-react'
 import styles from './TrendingSection.module.css'
 
@@ -54,10 +55,10 @@ function TrendItem({ item, rank }) {
                 <span className={styles.trendRank}>{rank}</span>
                 <div className={styles.trendInfo}>
                     <span className={styles.trendCategory}>{item.category}</span>
-                    <button className={styles.trendTag} aria-label={`Tendance #${item.tag}`}>
+                    <Link to={`/interests?tag=${encodeURIComponent(item.tag.toLowerCase())}`} className={styles.trendTag} aria-label={`Tendance #${item.tag}`}>
                         <Hash size={12} strokeWidth={2.5} />
                         {item.tag}
-                    </button>
+                    </Link>
                 </div>
             </div>
             <span className={styles.trendCount}>

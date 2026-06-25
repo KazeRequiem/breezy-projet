@@ -561,14 +561,20 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                     </div>
                 )}
 
-                {/* Tags (table tag via categorize) */}
+                {/* Tags — cliquables vers la page Intérêts filtrée */}
                 {tags.length > 0 && (
                     <div className={styles.tagList} aria-label="Tags du post">
                         {tags.map(tag => (
-                            <span key={tag} className={styles.tagPill}>
+                            <Link
+                                key={tag}
+                                to={`/interests?tag=${encodeURIComponent(tag)}`}
+                                className={styles.tagPill}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={`Voir les posts du tag ${tag}`}
+                            >
                                 <Tag size={10} strokeWidth={2} />
                                 {tag}
-                            </span>
+                            </Link>
                         ))}
                     </div>
                 )}

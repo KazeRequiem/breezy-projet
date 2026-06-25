@@ -1,85 +1,59 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ChevronRight, ArrowLeft, Compass, Tag, Plus, Check, Settings, X } from 'lucide-react'
 import TopBar          from '../../components/layout/TopBar/TopBar'
 import BottomNav        from '../../components/layout/BottomNav/BottomNav'
 import TrendingSection  from '../../components/trending/TrendingSection/TrendingSection'
 import PostCard         from '../../components/post/PostCard/PostCard'
 import BreezyAtmosphere from '../../components/ui/BreezyAtmosphere/BreezyAtmosphere'
+import { searchMessagesByTags } from '../../services/messageService'
 import styles from './InterestsPage.module.css'
 
-/* Tags disponibles (aligné sur RegisterPage) */
+/* Tags proposés dans le panneau de gestion */
 const AVAILABLE_TAGS = [
-    'Breezy', 'UIDesign', 'WebDev', 'React', 'FrontEnd',
-    'Design', 'Tech', 'Art', 'Musique', 'Sport',
-    'Voyage', 'Cuisine', 'Gaming', 'Cinema', 'Dev',
-    'Mobile', 'Feedback', 'Glass', 'Vite', 'Nature',
+    'breezy', 'uidesign', 'webdev', 'react', 'frontend',
+    'design', 'tech', 'art', 'musique', 'sport',
+    'voyage', 'cuisine', 'gaming', 'cinema', 'dev',
+    'mobile', 'feedback', 'glass', 'vite', 'nature',
 ]
 
-import { USE_MOCK, DEMO_POSTS } from '../../services/mockData'
-
-// Posts pour la page Intérêts — alimenté par les mock data ou vide en attendant l'API
-const INTERESTS_POSTS = USE_MOCK ? DEMO_POSTS : []
-
-// Lecture initiale du sessionStorage (lazy initializer, exécuté une seule fois)
-// sessionStorage préféré à localStorage : effacé à la fermeture de l'onglet
 function loadInitialTags() {
     const storedTags = sessionStorage.getItem('breezy_tags')
     if (storedTags) {
-        try {
-            return JSON.parse(storedTags)
-        } catch {
-            return ['Breezy', 'UIDesign', 'WebDev']
-        }
+        try { return JSON.parse(storedTags) } catch { return ['breezy', 'webdev', 'react'] }
     }
-    const initialTags = ['Breezy', 'UIDesign', 'WebDev', 'Nature', 'Gaming']
+    const initialTags = ['breezy', 'webdev', 'react', 'nature', 'gaming']
     sessionStorage.setItem('breezy_tags', JSON.stringify(initialTags))
     return initialTags
 }
 
-// Page principale pour afficher les posts par centre d'intérêt
 function InterestsPage() {
-    // Initialisation depuis sessionStorage via lazy initializer
+    const [searchParams, setSearchParams] = useSearchParams()
     const [selectedTags, setSelectedTags] = useState(loadInitialTags)
-    const [focusTag, setFocusTag] = useState(null)
+    const [focusTag, setFocusTag] = useState(searchParams.get('tag'))
+    const [postsByTag, setPostsByTag] = useState({}) // { tagLower: [posts] }
     const [showManageDrawer, setShowManageDrawer] = useState(false)
 
-    // Pré-calcul de la map de replies (même pattern optimisé que Feed.jsx)
-    const repliesMap = useMemo(() => {
-        const map = new Map()
-        for (const post of INTERESTS_POSTS) {
-            if (post.reply_to !== null) {
-                const parentId = post.reply_to.id_message
-                if (!map.has(parentId)) map.set(parentId, [])
-                map.get(parentId).push(post)
-            }
-        }
-        const fullMap = new Map()
-        for (const root of INTERESTS_POSTS.filter(p => p.reply_to === null)) {
-            const all = []
-            const queue = [root.id_message]
-            while (queue.length > 0) {
-                const parentId = queue.shift()
-                const children = map.get(parentId) || []
-                for (const child of children) {
-                    all.push(child)
-                    queue.push(child.id_message)
-                }
-            }
-            fullMap.set(root.id_message, all)
-        }
-        return fullMap
-    }, [])
+    // L'URL (?tag=) est la source de vérité du tag en focus
+    useEffect(() => { setFocusTag(searchParams.get('tag')) }, [searchParams])
 
-    // Filtre les posts associés à un tag (sans sensible à la casse) et exclut les réponses
-    const getPostsForTag = (tag) => {
-        return INTERESTS_POSTS.filter(post =>
-            post.reply_to === null &&
-            post.tags &&
-            post.tags.some(t => t.toLowerCase() === tag.toLowerCase())
-        )
-    }
+    // Charge les posts (via l'API) pour les tags suivis + le tag en focus
+    useEffect(() => {
+        let cancelled = false
+        const toLoad = [...new Set([...selectedTags, ...(focusTag ? [focusTag] : [])].map(t => t.toLowerCase()))]
+        toLoad.forEach(tag => {
+            searchMessagesByTags([tag])
+                .then(list => { if (!cancelled) setPostsByTag(prev => ({ ...prev, [tag]: list })) })
+                .catch(() => {})
+        })
+        return () => { cancelled = true }
+    }, [selectedTags, focusTag])
 
-    // Sauvegarde les tags et ferme la boîte de dialogue
+    const getPostsForTag = (tag) => postsByTag[tag.toLowerCase()] || []
+
+    const openFocus = (tag) => setSearchParams({ tag })
+    const closeFocus = () => setSearchParams({})
+
     const handleSaveTags = (updatedTags) => {
         setSelectedTags(updatedTags)
         sessionStorage.setItem('breezy_tags', JSON.stringify(updatedTags))
@@ -88,24 +62,17 @@ function InterestsPage() {
 
     return (
         <div className={styles.wrapper}>
-            {/* Arrière-plan holographique */}
             <div className="breezy-bg" aria-hidden="true" />
-
-            {/* Atmosphère décorative (halos, vent) */}
             <BreezyAtmosphere />
-
-            {/* Navigations principales */}
             <TopBar />
             <BottomNav />
 
-            {/* Contenu principal */}
             <div className={styles.layout}>
                 <main className={styles.mainColumn} role="main">
 
-                    {/* MODE FOCUS (Flux vertical à un tag) */}
                     {focusTag ? (
                         <div className={styles.focusContainer}>
-                            <button className={styles.backBtn} onClick={() => setFocusTag(null)}>
+                            <button className={styles.backBtn} onClick={closeFocus}>
                                 <ArrowLeft size={16} />
                                 Retour aux centres d'intérêts
                             </button>
@@ -123,11 +90,7 @@ function InterestsPage() {
                             <div className={styles.verticalFeed}>
                                 {getPostsForTag(focusTag).length > 0 ? (
                                     getPostsForTag(focusTag).map(post => (
-                                        <PostCard
-                                            key={post.id_message}
-                                            post={post}
-                                            replies={repliesMap.get(post.id_message) || []}
-                                        />
+                                        <PostCard key={post.id_message} post={post} replies={[]} />
                                     ))
                                 ) : (
                                     <div className={styles.emptyBox}>
@@ -137,7 +100,6 @@ function InterestsPage() {
                             </div>
                         </div>
                     ) : (
-                        /* MODE APERÇU (Défilement horizontal de tags) */
                         <div className={styles.overviewContainer}>
                             <header className={styles.pageHeader}>
                                 <div className={styles.titleGroup}>
@@ -157,13 +119,7 @@ function InterestsPage() {
                             {selectedTags.length > 0 ? (
                                 <div className={styles.rowsContainer}>
                                     {selectedTags.map(tag => (
-                                        <TagRow
-                                            key={tag}
-                                            tag={tag}
-                                            posts={getPostsForTag(tag)}
-                                            onVoirPlus={setFocusTag}
-                                            repliesMap={repliesMap}
-                                        />
+                                        <TagRow key={tag} tag={tag} posts={getPostsForTag(tag)} onVoirPlus={openFocus} />
                                     ))}
                                 </div>
                             ) : (
@@ -180,13 +136,11 @@ function InterestsPage() {
                     )}
                 </main>
 
-                {/* Sidebar droite (tendances) */}
                 <aside className={styles.rightColumn} aria-label="Tendances et suggestions">
                     <TrendingSection />
                 </aside>
             </div>
 
-            {/* Tiroir modal de gestion des tags */}
             <TagDrawer
                 isOpen={showManageDrawer}
                 onClose={() => setShowManageDrawer(false)}
@@ -198,17 +152,12 @@ function InterestsPage() {
     )
 }
 
-// Une ligne de tag (défilement horizontal + bouton d'accès direct)
-function TagRow({ tag, posts, onVoirPlus, repliesMap }) {
+function TagRow({ tag, posts, onVoirPlus }) {
     return (
         <section className={styles.tagSection} aria-label={`Tag ${tag}`}>
             <header className={styles.sectionHeader}>
                 <h2 className={styles.sectionTitle}>#{tag}</h2>
-                <button
-                    className={styles.voirPlusBtn}
-                    onClick={() => onVoirPlus(tag)}
-                    aria-label={`Voir plus de posts pour #${tag}`}
-                >
+                <button className={styles.voirPlusBtn} onClick={() => onVoirPlus(tag)} aria-label={`Voir plus de posts pour #${tag}`}>
                     <span>Voir plus</span>
                     <ChevronRight size={14} />
                 </button>
@@ -218,55 +167,41 @@ function TagRow({ tag, posts, onVoirPlus, repliesMap }) {
                 {posts.length > 0 ? (
                     posts.map(post => (
                         <div key={post.id_message} className={styles.scrollItem} role="listitem">
-                            <PostCard
-                                post={post}
-                                compact={true}
-                                replies={repliesMap.get(post.id_message) || []}
-                            />
+                            <PostCard post={post} compact={true} replies={[]} />
                         </div>
                     ))
                 ) : (
-                    <div className={styles.emptyPill}>
-                        Pas encore de post récent pour #{tag}
-                    </div>
+                    <div className={styles.emptyPill}>Pas encore de post récent pour #{tag}</div>
                 )}
             </div>
         </section>
     )
 }
 
-// Modal pour s'abonner aux tags (utilise un état temporaire tempTags pour ne pas ralentir le reste de la page)
 function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
-    const [tempTags, setTempTags] = useState([])
+    const [tempTags, setTempTags] = useState(selectedTags)
     const [search, setSearch] = useState('')
 
-    // Reset du buffer local à la fermeture
-    const handleClose = () => {
-        setTempTags(selectedTags)
-        setSearch('')
-        onClose()
-    }
+    useEffect(() => { if (isOpen) { setTempTags(selectedTags); setSearch('') } }, [isOpen, selectedTags])
 
     if (!isOpen) return null
 
-    // Sélection / désélection temporaire
     const toggleTempTag = (tag) => {
-        setTempTags(prev =>
-            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-        )
+        setTempTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
     }
-
-    // Filtrage simple pour la barre de recherche
-    const filteredTags = availableTags.filter(tag =>
-        tag.toLowerCase().includes(search.toLowerCase())
-    )
+    const addCustom = () => {
+        const clean = search.trim().replace(/^#/, '').toLowerCase()
+        if (clean && !tempTags.includes(clean)) setTempTags(prev => [...prev, clean])
+        setSearch('')
+    }
+    const filteredTags = availableTags.filter(tag => tag.toLowerCase().includes(search.toLowerCase()))
 
     return (
-        <div className={styles.drawerOverlay} onClick={handleClose} onKeyDown={(e) => { if (e.key === 'Escape') handleClose() }} role="dialog" aria-modal="true">
+        <div className={styles.drawerOverlay} onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose() }} role="dialog" aria-modal="true">
             <div className={styles.drawerCard} onClick={(e) => e.stopPropagation()} role="presentation">
                 <header className={styles.drawerHeader}>
                     <h2 className={styles.drawerTitle}>Gérer mes centres d'intérêts</h2>
-                    <button className={styles.closeBtn} onClick={handleClose} aria-label="Fermer le panneau">
+                    <button className={styles.closeBtn} onClick={onClose} aria-label="Fermer le panneau">
                         <X size={18} />
                     </button>
                 </header>
@@ -274,10 +209,11 @@ function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
                 <div className={styles.searchBox}>
                     <input
                         type="text"
-                        placeholder="Rechercher un tag..."
+                        placeholder="Rechercher ou ajouter un tag…"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        aria-label="Rechercher un tag"
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom() } }}
+                        aria-label="Rechercher ou ajouter un tag"
                     />
                 </div>
 
@@ -289,10 +225,7 @@ function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
                                 <button
                                     key={tag}
                                     type="button"
-                                    className={[
-                                        styles.drawerTagOption,
-                                        isSelected ? styles.drawerTagOptionSelected : ''
-                                    ].join(' ')}
+                                    className={[styles.drawerTagOption, isSelected ? styles.drawerTagOptionSelected : ''].join(' ')}
                                     onClick={() => toggleTempTag(tag)}
                                     aria-pressed={isSelected}
                                 >
@@ -302,7 +235,9 @@ function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
                             )
                         })
                     ) : (
-                        <p className={styles.noResultsText}>Aucun tag ne correspond à votre recherche.</p>
+                        <button type="button" className={styles.drawerTagOption} onClick={addCustom}>
+                            <Plus size={12} /> Ajouter « {search.trim().replace(/^#/, '').toLowerCase()} »
+                        </button>
                     )}
                 </div>
 
