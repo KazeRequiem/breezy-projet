@@ -1,0 +1,51 @@
+name: Security Scan
+
+on:
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:        # for manual run (action on github)
+
+jobs:
+  zap-api-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Préparer le .env de CI
+        run: cp .env.ci .env
+
+      - name: Démarrer le back et ses dépendances
+        run: docker compose up -d back
+
+      - name: Attendre que l'API réponde
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/ > /dev/null; then
+              echo "API prête."
+              exit 0
+            fi
+            echo "Attente de l'API... ($i/30)"
+            sleep 5
+          done
+          echo "L'API n'a pas démarré à temps."
+          docker compose logs back
+          exit 1
+
+      - name: Scan ZAP (API + OpenAPI)
+        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d  # v0.10.0
+        with:
+          target: 'http://localhost:3000/api'
+          format: openapi
+          cmd_options: '-z "-config replacer.full_list(0).description=openapi"'
+          allow_issue_writing: false   # do not create GitHub issues automatically
+          fail_action: false
+
+      - name: Récupérer les logs en cas d'échec
+        if: failure()
+        run: docker compose logs
+
+      - name: Arrêter la stack
+        if: always()
+        run: docker compose down -v
