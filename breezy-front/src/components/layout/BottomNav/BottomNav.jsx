@@ -4,6 +4,7 @@ import { Home, Compass, Search, Bell, ShieldCheck, User } from 'lucide-react'
 import logoBreezy from '../../../assets/logo-breezy.png'
 import { useAuth } from '../../../contexts/AuthContext'
 import { searchUsers } from '../../../services/userService'
+import { searchMessagesByTags } from '../../../services/messageService'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import styles from './BottomNav.module.css'
 
@@ -42,6 +43,7 @@ function BottomNav() {
     // États recherche
     const [searchQuery, setSearchQuery] = useState('')
     const [suggestions, setSuggestions] = useState([])
+    const [searchMode, setSearchMode] = useState('users') // 'users' | 'tags'
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
@@ -52,13 +54,16 @@ function BottomNav() {
     // Recherche API
     const debouncedSearch = useCallback((query) => {
         if (debounceRef.current) clearTimeout(debounceRef.current)
-        if (!query.trim()) {
+        const q = query.trim()
+        if (!q) {
             setSuggestions([])
             return
         }
+        const isTag = q.startsWith('#')
+        setSearchMode(isTag ? 'tags' : 'users')
         debounceRef.current = setTimeout(async () => {
             try {
-                const results = await searchUsers(query)
+                const results = isTag ? await searchMessagesByTags(q) : await searchUsers(q)
                 setSuggestions(results)
             } catch {
                 setSuggestions([])
@@ -119,7 +124,7 @@ function BottomNav() {
             {/* Suggestions mobiles (au-dessus de la bottomNav) */}
             {mobileSearchOpen && showSuggestions && suggestions.length > 0 && (
                 <div className={[styles.suggestionsMobile, 'anim-fade-up'].join(' ')}>
-                    <SuggestionList suggestions={suggestions} onSelect={handleSelectUser} />
+                    <SuggestionList suggestions={suggestions} onSelect={handleSelectUser} mode={searchMode} />
                 </div>
             )}
 
@@ -188,7 +193,7 @@ function BottomNav() {
                         <input
                             id="search-desktop"
                             type="text"
-                            placeholder="Rechercher..."
+                            placeholder="Rechercher (@pseudo ou #tag)…"
                             aria-label="Champ de recherche"
                             value={searchQuery}
                             onChange={handleSearchChange}
@@ -200,7 +205,7 @@ function BottomNav() {
                     {/* Suggestions desktop (sous la barre de recherche de la sidebar) */}
                     {showSuggestions && suggestions.length > 0 && (
                         <div className={[styles.suggestionsDesktop, 'anim-fade-up'].join(' ')}>
-                            <SuggestionList suggestions={suggestions} onSelect={handleSelectUser} />
+                            <SuggestionList suggestions={suggestions} onSelect={handleSelectUser} mode={searchMode} />
                         </div>
                     )}
                 </div>
@@ -287,7 +292,29 @@ function NavItem({ path, icon: Icon, label, active }) {
 }
 
 /** Liste de suggestions de recherche (partagée mobile / desktop) */
-function SuggestionList({ suggestions, onSelect }) {
+function SuggestionList({ suggestions, onSelect, mode = 'users' }) {
+    if (mode === 'tags') {
+        return suggestions.map(post => {
+            const author = post.author || {}
+            return (
+                <button
+                    key={post.id_message || post._id}
+                    className={styles.suggestionItem}
+                    onClick={() => author.username && onSelect(author.username)}
+                >
+                    <div className={styles.suggestionAvatar}>
+                        {author.profile_picture
+                            ? <img src={author.profile_picture} alt={author.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                            : (author.username || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div className={styles.suggestionInfo}>
+                        <span className={styles.suggestionName}>{(post.content || '').slice(0, 40) || 'Post'}</span>
+                        <span className={styles.suggestionHandle}>@{author.username || 'inconnu'}</span>
+                    </div>
+                </button>
+            )
+        })
+    }
     return suggestions.map(u => (
         <button
             key={u.username}

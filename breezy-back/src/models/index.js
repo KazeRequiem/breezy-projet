@@ -6,6 +6,7 @@ const Report = require("./report");
 const Reply = require("./reply");
 const Tag = require("./tag");
 const Whisper = require("./whisper");
+const Notification = require("./notification");
 
 module.exports = {
     User,
@@ -16,4 +17,5 @@ module.exports = {
     Reply,
     Tag,
     Whisper,
+    Notification,
 };

@@ -25,5 +25,4 @@ router.post("/:id/whispers", verifyToken, whisperController.create);
 router.get("/:id/whispers", verifyToken, whisperController.getByMessage);
 
 
-
 module.exports = router;

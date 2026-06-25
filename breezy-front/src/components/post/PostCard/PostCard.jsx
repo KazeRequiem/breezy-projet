@@ -6,6 +6,8 @@ import { useAuth } from '../../../contexts/AuthContext'
 import RequireRole from '../../ui/RequireRole/RequireRole'
 import { deleteMessage, updateMessage, getReplies, createReply } from '../../../services/messageService'
 import { getLikeStatus, likePost, unlikePost } from '../../../services/likeService'
+import { reportMessage } from '../../../services/reportService'
+import { getWhispers, sendWhisper, deleteWhisper } from '../../../services/whisperService'
 import styles from './PostCard.module.css'
 
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
@@ -55,6 +57,7 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
     const [showWhisper, setShowWhisper] = useState(false)
     const [whisperText, setWhisperText] = useState('')
     const [whisperStatus, setWhisperStatus] = useState('idle') // 'idle' | 'sending' | 'sent'
+    const [whispers, setWhispers] = useState([])
     const [toastMessage, setToastMessage] = useState('')
 
     // États Like et Commentaires
@@ -257,27 +260,53 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         }
     }
 
-    const handleReport = (e) => {
+    const handleReport = async (e) => {
         e.stopPropagation()
-        setIsReported(true)
         setShowMenu(false)
-        showToast('Message signalé. Notre équipe va l\'examiner.')
+        try {
+            await reportMessage(id_message)
+            setIsReported(true)
+            showToast('Message signalé. Notre équipe va l\'examiner.')
+        } catch (err) {
+            if (err.message && err.message.toLowerCase().includes('déjà')) {
+                setIsReported(true)
+                showToast('Vous avez déjà signalé ce message.')
+            } else {
+                showToast('Erreur lors du signalement.')
+            }
+        }
     }
 
-    const handleSendWhisper = (e) => {
+    const handleSendWhisper = async (e) => {
         e.preventDefault()
-        if (!whisperText.trim()) return
+        const text = whisperText.trim()
+        if (!text) return
 
         setWhisperStatus('sending')
-        setTimeout(() => {
+        try {
+            const created = await sendWhisper(id_message, text)
+            const w = {
+                ...created,
+                author: { _id: user?.id, username: currentLoggedUser || 'moi', profile_picture: user?.profile_picture ?? null },
+            }
+            setWhispers(prev => [...prev, w])
+            setWhisperText('')
             setWhisperStatus('sent')
-            setTimeout(() => {
-                setShowWhisper(false)
-                setWhisperText('')
-                setWhisperStatus('idle')
-                showToast('Votre murmure a été soufflé à l\'auteur ! 🍃')
-            }, 1000)
-        }, 1200)
+            setTimeout(() => setWhisperStatus('idle'), 1200)
+            showToast('Votre murmure a été soufflé à l\'auteur ! 🍃')
+        } catch {
+            setWhisperStatus('idle')
+            showToast('Erreur lors de l\'envoi du murmure.')
+        }
+    }
+
+    const handleDeleteWhisper = async (wid) => {
+        try {
+            await deleteWhisper(wid)
+            setWhispers(prev => prev.filter(w => w._id !== wid))
+        } catch {
+            showToast('Erreur lors de la suppression du murmure.')
+        }
     }
 
     const showToast = (msg) => {
@@ -296,6 +325,15 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
             .catch(() => {})
         return () => { cancelled = true }
     }, [id_message])
+
+    useEffect(() => {
+        if (!showWhisper) return
+        let cancelled = false
+        getWhispers(id_message)
+            .then(list => { if (!cancelled && Array.isArray(list)) setWhispers(list) })
+            .catch(() => {})
+        return () => { cancelled = true }
+    }, [showWhisper, id_message])
 
     const handleLikeClick = async (e) => {
         e.stopPropagation()
@@ -650,6 +688,25 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                             <p>En réponse à <strong>@{author.username}</strong> :</p>
                             <blockquote className={styles.excerptQuote}>"{content}"</blockquote>
                         </div>
+
+                        {whispers.length > 0 && (
+                            <div style={{ maxHeight: 180, overflowY: 'auto', margin: '4px 0 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {whispers.map(w => (
+                                    <div key={w._id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: 'rgba(0,0,0,0.04)', borderRadius: 10, padding: '8px 10px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <span style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--brand,#3b8cf0)' }}>@{w.author?.username || 'moi'}</span>
+                                            <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: 'var(--text-primary,#1a1a2e)' }}>{w.content}</p>
+                                        </div>
+                                        {String(w.author?._id) === String(user?.id) && (
+                                            <button type="button" onClick={() => handleDeleteWhisper(w._id)} aria-label="Supprimer mon murmure"
+                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 2 }}>
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         <form onSubmit={handleSendWhisper} className={styles.whisperForm}>
                             <textarea

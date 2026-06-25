@@ -1,12 +1,12 @@
 const db = require("../models");
 const Message = db.Message;
 const Reply = db.Reply;
+const notify = require("../utils/notify");
 
 exports.create = async (req, res) => {
     try {
         const parentId = req.params.id;
 
-        // 404 : le message parent doit exister
         const parent = await Message.findById(parentId);
         if (!parent) {
             return res.status(404).json({ message: "Message introuvable" });
@@ -28,6 +28,13 @@ exports.create = async (req, res) => {
         const reply = await Reply.create({
             message: parentId,
             reply: message._id,
+        });
+
+        await notify({
+            recipient: parent.author,
+            sender: req.user.id,
+            type: "reply",
+            message: parentId,
         });
 
         res.status(201).json({ message, reply });

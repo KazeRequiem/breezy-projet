@@ -7,8 +7,11 @@ jest.mock("../src/models", () => ({
     },
 }));
 
+jest.mock("../src/utils/notify");
+
 const db = require("../src/models");
 const followController = require("../src/controllers/followController");
+const notify = require("../src/utils/notify");
 
 function mockRes() {
     const res = {};
@@ -57,6 +60,34 @@ describe("followController.follow", () => {
         const createArg = db.Follow.create.mock.calls[0][0];
         expect(createArg.follower).toBe("u1");   // from token
         expect(createArg.following).toBe("u2");  // from URL
+    });
+
+    test("notifie la personne suivie (type follow)", async () => {
+        db.Follow.findOne.mockResolvedValue(null);
+        db.Follow.create.mockImplementation(async (data) => ({ _id: "f1", ...data }));
+
+        const req = { params: { id: "u2" }, user: { id: "u1" } };
+        const res = mockRes();
+
+        await followController.follow(req, res);
+
+        expect(notify).toHaveBeenCalledTimes(1);
+        const notifyArg = notify.mock.calls[0][0];
+        expect(notifyArg.recipient).toBe("u2");   // la personne suivie
+        expect(notifyArg.sender).toBe("u1");      // celui qui suit
+        expect(notifyArg.type).toBe("follow");
+    });
+
+    test("ne notifie pas si le follow échoue en amont (déjà suivi)", async () => {
+        db.Follow.findOne.mockResolvedValue({ _id: "f1" }); // déjà suivi -> 409
+
+        const req = { params: { id: "u2" }, user: { id: "u1" } };
+        const res = mockRes();
+
+        await followController.follow(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(notify).not.toHaveBeenCalled();
     });
 });
 

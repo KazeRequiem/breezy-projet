@@ -18,6 +18,12 @@ exports.register = async (req, res) => {
             return res.status(400).json({ message: "username, email et mot de passe sont requis" });
         }
 
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            return res.status(400).json({
+                message: "Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores",
+            });
+        }
+
         const existing = await User.findOne({ email: String(email) });
         if (existing) {
             return res.status(409).json({ message: "Cet email est déjà utilisé" });

@@ -1,13 +1,12 @@
 const db = require("../models");
 const Whisper = db.Whisper;
 const Message = db.Message;
+const notify = require("../utils/notify");
 
-// POST /messages/:id/whispers — whisper a private message on a post (Fx17)
 exports.create = async (req, res) => {
     try {
         const messageId = req.params.id;
 
-        // 404 : target message must exist
         const target = await Message.findById(messageId);
         if (!target) {
             return res.status(404).json({ message: "Message introuvable" });
@@ -27,6 +26,13 @@ exports.create = async (req, res) => {
             message: messageId,
         });
 
+        await notify({
+            recipient: target.author,
+            sender: req.user.id,
+            type: "whisper",
+            message: messageId,
+        });
+
         res.status(201).json(whisper);
     } catch (err) {
         console.error(err);
@@ -34,15 +40,10 @@ exports.create = async (req, res) => {
     }
 };
 
-// GET /messages/:id/whispers — list all the whisper
-// Rules :
-//   - author of the message  -> see all of his whisper on a message
-//   - other user  -> see only his whisper on a message
 exports.getByMessage = async (req, res) => {
     try {
         const messageId = req.params.id;
 
-        // 404 : message must exist (to know it author)
         const target = await Message.findById(messageId);
         if (!target) {
             return res.status(404).json({ message: "Message introuvable" });
@@ -66,7 +67,6 @@ exports.getByMessage = async (req, res) => {
     }
 };
 
-// DELETE /whispers/:id — delete our own whisper
 exports.remove = async (req, res) => {
     try {
         const whisper = await Whisper.findById(req.params.id);
@@ -74,7 +74,6 @@ exports.remove = async (req, res) => {
             return res.status(404).json({ message: "Whisper introuvable" });
         }
 
-        // seul l'auteur du whisper peut le supprimer
         if (whisper.author.toString() !== req.user.id) {
             return res.status(403).json({ message: "Action non autorisée" });
         }

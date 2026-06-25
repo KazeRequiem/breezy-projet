@@ -5,10 +5,6 @@ const User = db.User;
 const Follow = db.Follow;
 const Message = db.Message;
 
-/**
- * GET /api/users/search?q=...
- * Recherche des utilisateurs par nom d'utilisateur (autocomplétion).
- */
 exports.search = async (req, res) => {
     try {
         const q = (req.query.q || "").trim();
@@ -23,7 +19,7 @@ exports.search = async (req, res) => {
             username: { $regex: escaped, $options: "i" },
         })
             .select("username profile_picture biography")
-            .limit(10);
+            .limit(5);
 
         res.status(200).json(users);
     } catch (err) {
@@ -33,10 +29,6 @@ exports.search = async (req, res) => {
 };
 
 
-/**
- * GET /api/users/:username
- * Retourne le profil public d'un utilisateur (sans le mot de passe).
- */
 exports.getByUsername = async (req, res) => {
     try {
         const user = await User.findOne({ username: req.params.username })

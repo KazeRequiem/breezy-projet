@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Trash2, Users, MessageSquare, ChevronDown, Ban, RotateCcw, Search } from 'lucide-react'
+import { ShieldCheck, Trash2, Users, MessageSquare, ChevronDown, Ban, RotateCcw, Search, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import RequireRole from '../../components/ui/RequireRole/RequireRole'
 import TopBar from '../../components/layout/TopBar/TopBar'
@@ -146,7 +146,19 @@ function AdminPage() {
                                                     {msg.author?.role && <span className={ROLE_COLORS[msg.author.role]}>{msg.author.role}</span>}
                                                 </div>
                                             </div>
-                                            <p className={styles.contentCell}>{msg.content}</p>
+                                            <div className={styles.contentCell}>
+                                                {msg.reports_count > 0 && (
+                                                    <span style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                                                        marginRight: 8, padding: '2px 8px', borderRadius: 999,
+                                                        background: 'rgba(220,38,38,0.12)', color: '#dc2626',
+                                                        fontSize: '0.72rem', fontWeight: 700, verticalAlign: 'middle',
+                                                    }}>
+                                                        <AlertTriangle size={12} /> {msg.reports_count}
+                                                    </span>
+                                                )}
+                                                <span>{msg.content}</span>
+                                            </div>
                                             <time className={styles.dateCell}>{formatDate(msg.date_publication)}</time>
                                             <button
                                                 className={styles.deleteBtn}
