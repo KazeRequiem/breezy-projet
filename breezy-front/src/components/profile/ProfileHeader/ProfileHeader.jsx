@@ -20,10 +20,14 @@ function ProfileHeader({ user, isOwn = true, isFollowing = false, onFollow, onEd
     const {
         username    = 'utilisateur',
         bio         = '',
+        biography   = '',
         location    = '',
         banner_color = '#e88a8a',
         profile_picture = null,
     } = user
+
+    // L'API renvoie « biography » ; on garde « bio » en repli
+    const bioText = biography || bio
 
     // Initiale pour l'avatar par défaut
     const initial = username.charAt(0).toUpperCase()
@@ -54,7 +58,7 @@ function ProfileHeader({ user, isOwn = true, isFollowing = false, onFollow, onEd
             {/* Infos utilisateur */}
             <div className={styles.userInfo}>
                 <h1 className={styles.username}>@{username}</h1>
-                {bio      && <p className={styles.bio}>{bio}</p>}
+                {bioText  && <p className={styles.bio}>{bioText}</p>}
                 {location && <p className={styles.location}>{location}</p>}
             </div>
 

@@ -43,6 +43,15 @@ export function AuthProvider({ children }) {
         setUser(newUser)
     }
 
+    /** updateUser() : met à jour l'utilisateur courant (après édition de profil, tags…) */
+    const updateUser = (partial) => {
+        setUser(prev => {
+            const merged = { ...prev, ...partial }
+            sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(merged))
+            return merged
+        })
+    }
+
     /** logout() : Nettoie la session et vide le state */
     const logout = () => {
         // TODO (Sécurité) : Avec httpOnly, il faudra d'abord faire un appel API (ex: fetch('/api/auth/logout')) 
@@ -60,6 +69,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!token,
         login,
         logout,
+        updateUser,
     }
 
     return (

@@ -1,5 +1,5 @@
 const db = require("../models");
-const { publicUser } = require("../utils/publicUser");
+const { publicUser, selfUser } = require("../utils/publicUser");
 
 const User = db.User;
 const Follow = db.Follow;
@@ -50,6 +50,42 @@ exports.getByUsername = async (req, res) => {
             followingCount,
             messagesCount,
         });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+// PUT /api/users/me — mise à jour du profil de l'utilisateur connecté
+exports.updateProfile = async (req, res) => {
+    try {
+        const { username, biography, profile_picture, tags } = req.body;
+        const updates = {};
+
+        if (username !== undefined) {
+            const u = String(username).trim();
+            if (!u) return res.status(400).json({ message: "Le nom d'utilisateur ne peut pas être vide" });
+            if (!/^[a-zA-Z0-9_]+$/.test(u)) {
+                return res.status(400).json({ message: "Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores" });
+            }
+            updates.username = u;
+        }
+        if (biography !== undefined) updates.biography = biography || null;
+        if (profile_picture !== undefined) updates.profile_picture = profile_picture || null;
+        if (tags !== undefined) {
+            updates.tags = Array.isArray(tags)
+                ? [...new Set(tags.map((t) => String(t).trim().replace(/^#/, "").toLowerCase()).filter(Boolean))]
+                : [];
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+        if (!user) return res.status(404).json({ message: "Utilisateur introuvable" });
+
+        res.status(200).json(selfUser(user));
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Erreur serveur" });

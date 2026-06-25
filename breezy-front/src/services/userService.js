@@ -24,3 +24,14 @@ export async function searchUsers(query) {
     const data = await apiFetch(`/api/users/search?q=${encoded}`)
     return Array.isArray(data) ? data : []
 }
+
+/**
+ * updateProfile() : Met à jour le profil de l'utilisateur connecté.
+ * @param {{ username?, biography?, profile_picture?, tags? }} data
+ */
+export async function updateProfile(data) {
+    return apiFetch('/api/users/me', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    })
+}

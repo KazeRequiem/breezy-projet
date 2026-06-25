@@ -27,6 +27,10 @@ const verifyToken = require("../middlewares/auth");
  */
 router.get("/search", verifyToken, userController.search);
 
+// PUT /api/users/me : mise à jour du profil de l'utilisateur connecté
+// (déclarée avant /:username pour ne pas être capturée comme un username)
+router.put("/me", verifyToken, userController.updateProfile);
+
 /**
  * @swagger
  * /api/users/{username}:

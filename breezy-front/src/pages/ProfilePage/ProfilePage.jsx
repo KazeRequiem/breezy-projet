@@ -10,6 +10,7 @@ import ProfileStats     from '../../components/profile/ProfileStats/ProfileStats
 import PostCard         from '../../components/post/PostCard/PostCard'
 import NewBreezeModal  from '../../components/post/NewBreezeModal/NewBreezeModal'
 import SettingsModal   from '../../components/profile/SettingsModal/SettingsModal'
+import EditProfileModal from '../../components/profile/EditProfileModal/EditProfileModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { getUserByUsername } from '../../services/userService'
 import { getMessagesByUsername } from '../../services/messageService'
@@ -33,7 +34,7 @@ function parseHashtags(text) {
  */
 function ProfilePage() {
     const { username } = useParams()
-    const { user } = useAuth()
+    const { user, updateUser } = useAuth()
     const currentLoggedUser = user?.username ?? null
 
     // Le username cible : celui de l'URL ou celui connecté
@@ -45,6 +46,7 @@ function ProfilePage() {
 
     const [isComposerOpen, setIsComposerOpen] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [isEditOpen,     setIsEditOpen]     = useState(false)
     const [localPosts,     setLocalPosts]     = useState([])
     const [breezesCount,   setBreezesCount]   = useState(0)
     const [isFollowing,    setIsFollowing]    = useState(false)
@@ -226,7 +228,7 @@ function ProfilePage() {
                             isOwn={isOwn}
                             isFollowing={isFollowing}
                             onFollow={handleToggleFollow}
-                            onEdit={() => {}}
+                            onEdit={() => setIsEditOpen(true)}
                             onSettings={() => setIsSettingsOpen(true)}
                             onNewPost={() => setIsComposerOpen(true)}
                         />
@@ -274,6 +276,17 @@ function ProfilePage() {
                     <SettingsModal
                         isOpen={isSettingsOpen}
                         onClose={() => setIsSettingsOpen(false)}
+                    />
+
+                    {/* Modal d'édition du profil */}
+                    <EditProfileModal
+                        isOpen={isEditOpen}
+                        user={profileUser}
+                        onClose={() => setIsEditOpen(false)}
+                        onSaved={(updated) => {
+                            setProfileUser(prev => ({ ...prev, ...updated }))
+                            updateUser({ username: updated.username, profile_picture: updated.profile_picture, biography: updated.biography, tags: updated.tags })
+                        }}
                     />
 
                 </main>

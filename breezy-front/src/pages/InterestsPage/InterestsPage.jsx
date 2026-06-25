@@ -6,10 +6,12 @@ import BottomNav        from '../../components/layout/BottomNav/BottomNav'
 import TrendingSection  from '../../components/trending/TrendingSection/TrendingSection'
 import PostCard         from '../../components/post/PostCard/PostCard'
 import BreezyAtmosphere from '../../components/ui/BreezyAtmosphere/BreezyAtmosphere'
+import { useAuth } from '../../contexts/AuthContext'
 import { searchMessagesByTags } from '../../services/messageService'
+import { updateProfile } from '../../services/userService'
 import styles from './InterestsPage.module.css'
 
-/* Tags proposés dans le panneau de gestion */
+/* Tags proposés dans le panneau (en plus de ceux déjà suivis) */
 const AVAILABLE_TAGS = [
     'breezy', 'uidesign', 'webdev', 'react', 'frontend',
     'design', 'tech', 'art', 'musique', 'sport',
@@ -17,24 +19,25 @@ const AVAILABLE_TAGS = [
     'mobile', 'feedback', 'glass', 'vite', 'nature',
 ]
 
-function loadInitialTags() {
-    const storedTags = sessionStorage.getItem('breezy_tags')
-    if (storedTags) {
-        try { return JSON.parse(storedTags) } catch { return ['breezy', 'webdev', 'react'] }
-    }
-    const initialTags = ['breezy', 'webdev', 'react', 'nature', 'gaming']
-    sessionStorage.setItem('breezy_tags', JSON.stringify(initialTags))
-    return initialTags
-}
-
 function InterestsPage() {
+    const { user, updateUser } = useAuth()
     const [searchParams, setSearchParams] = useSearchParams()
-    const [selectedTags, setSelectedTags] = useState(loadInitialTags)
-    const focusTag = searchParams.get('tag')
-    const [postsByTag, setPostsByTag] = useState({}) // { tagLower: [posts] }
+
+    // Les tags suivis viennent du compte (choisis à l'inscription / édités ici)
+    const [selectedTags, setSelectedTags] = useState(() => Array.isArray(user?.tags) ? user.tags : [])
+    const [focusTag, setFocusTag] = useState(searchParams.get('tag'))
+    const [postsByTag, setPostsByTag] = useState({})
     const [showManageDrawer, setShowManageDrawer] = useState(false)
 
-    // Charge les posts (via l'API) pour les tags suivis + le tag en focus
+    // Synchronise avec les tags du compte si l'utilisateur change
+    useEffect(() => {
+        if (Array.isArray(user?.tags)) setSelectedTags(user.tags)
+    }, [user?.tags])
+
+    // L'URL (?tag=) pilote le focus
+    useEffect(() => { setFocusTag(searchParams.get('tag')) }, [searchParams])
+
+    // Charge les posts (API) pour les tags suivis + le tag en focus
     useEffect(() => {
         let cancelled = false
         const toLoad = [...new Set([...selectedTags, ...(focusTag ? [focusTag] : [])].map(t => t.toLowerCase()))]
@@ -47,14 +50,19 @@ function InterestsPage() {
     }, [selectedTags, focusTag])
 
     const getPostsForTag = (tag) => postsByTag[tag.toLowerCase()] || []
-
     const openFocus = (tag) => setSearchParams({ tag })
     const closeFocus = () => setSearchParams({})
 
-    const handleSaveTags = (updatedTags) => {
+    // Sauvegarde les tags suivis sur le compte
+    const handleSaveTags = async (updatedTags) => {
         setSelectedTags(updatedTags)
-        sessionStorage.setItem('breezy_tags', JSON.stringify(updatedTags))
         setShowManageDrawer(false)
+        try {
+            const updated = await updateProfile({ tags: updatedTags })
+            updateUser({ tags: updated.tags ?? updatedTags })
+        } catch {
+            // on garde l'affichage local même si la persistance échoue
+        }
     }
 
     return (
@@ -66,14 +74,12 @@ function InterestsPage() {
 
             <div className={styles.layout}>
                 <main className={styles.mainColumn} role="main">
-
                     {focusTag ? (
                         <div className={styles.focusContainer}>
                             <button className={styles.backBtn} onClick={closeFocus}>
                                 <ArrowLeft size={16} />
                                 Retour aux centres d'intérêts
                             </button>
-
                             <header className={styles.focusHeader}>
                                 <div className={styles.tagTitleGroup}>
                                     <Tag size={20} className={styles.tagIcon} />
@@ -83,7 +89,6 @@ function InterestsPage() {
                                     {getPostsForTag(focusTag).length} publication{getPostsForTag(focusTag).length > 1 ? 's' : ''}
                                 </span>
                             </header>
-
                             <div className={styles.verticalFeed}>
                                 {getPostsForTag(focusTag).length > 0 ? (
                                     getPostsForTag(focusTag).map(post => (
@@ -103,11 +108,7 @@ function InterestsPage() {
                                     <Compass size={24} className={styles.compassIcon} />
                                     <h1 className={styles.pageTitle}>Mes centres d'intérêts</h1>
                                 </div>
-                                <button
-                                    className={styles.manageBtn}
-                                    onClick={() => setShowManageDrawer(true)}
-                                    aria-label="Gérer mes tags favoris"
-                                >
+                                <button className={styles.manageBtn} onClick={() => setShowManageDrawer(true)} aria-label="Gérer mes tags favoris">
                                     <Settings size={15} />
                                     Gérer mes tags
                                 </button>
@@ -159,7 +160,6 @@ function TagRow({ tag, posts, onVoirPlus }) {
                     <ChevronRight size={14} />
                 </button>
             </header>
-
             <div className={styles.horizontalScroll} role="list">
                 {posts.length > 0 ? (
                     posts.map(post => (
@@ -178,37 +178,26 @@ function TagRow({ tag, posts, onVoirPlus }) {
 function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
     const [tempTags, setTempTags] = useState(selectedTags)
     const [search, setSearch] = useState('')
-    const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
 
-    // Mise à jour de l'état pendant le rendu (recommandé par React à la place d'un useEffect)
-    if (isOpen !== prevIsOpen) {
-        setPrevIsOpen(isOpen)
-        if (isOpen) {
-            setTempTags(selectedTags)
-            setSearch('')
-        }
-    }
+    useEffect(() => { if (isOpen) { setTempTags(selectedTags); setSearch('') } }, [isOpen, selectedTags])
 
     if (!isOpen) return null
 
-    const toggleTempTag = (tag) => {
-        setTempTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
-    }
+    const toggleTempTag = (tag) => setTempTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
     const addCustom = () => {
         const clean = search.trim().replace(/^#/, '').toLowerCase()
         if (clean && !tempTags.includes(clean)) setTempTags(prev => [...prev, clean])
         setSearch('')
     }
-    const filteredTags = availableTags.filter(tag => tag.toLowerCase().includes(search.toLowerCase()))
+    const options = [...new Set([...selectedTags, ...availableTags])]
+    const filtered = options.filter(tag => tag.toLowerCase().includes(search.toLowerCase()))
 
     return (
         <div className={styles.drawerOverlay} onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose() }} role="dialog" aria-modal="true">
             <div className={styles.drawerCard} onClick={(e) => e.stopPropagation()} role="presentation">
                 <header className={styles.drawerHeader}>
                     <h2 className={styles.drawerTitle}>Gérer mes centres d'intérêts</h2>
-                    <button className={styles.closeBtn} onClick={onClose} aria-label="Fermer le panneau">
-                        <X size={18} />
-                    </button>
+                    <button className={styles.closeBtn} onClick={onClose} aria-label="Fermer le panneau"><X size={18} /></button>
                 </header>
 
                 <div className={styles.searchBox}>
@@ -223,17 +212,13 @@ function TagDrawer({ isOpen, onClose, availableTags, selectedTags, onSave }) {
                 </div>
 
                 <div className={styles.drawerTagsGrid}>
-                    {filteredTags.length > 0 ? (
-                        filteredTags.map(tag => {
+                    {filtered.length > 0 ? (
+                        filtered.map(tag => {
                             const isSelected = tempTags.includes(tag)
                             return (
-                                <button
-                                    key={tag}
-                                    type="button"
+                                <button key={tag} type="button"
                                     className={[styles.drawerTagOption, isSelected ? styles.drawerTagOptionSelected : ''].join(' ')}
-                                    onClick={() => toggleTempTag(tag)}
-                                    aria-pressed={isSelected}
-                                >
+                                    onClick={() => toggleTempTag(tag)} aria-pressed={isSelected}>
                                     {isSelected ? <Check size={12} strokeWidth={3} /> : <Plus size={12} />}
                                     {tag}
                                 </button>
