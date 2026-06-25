@@ -132,7 +132,7 @@ function ProfilePage() {
         }
     }
 
-    const handlePublish = (content, media = null) => {
+    const handlePublish = (content, media = null, mood = 'cloudy') => {
         if (!user) return
         const newPost = {
             id_message: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
@@ -144,6 +144,7 @@ function ProfilePage() {
             tags: parseHashtags(content),
             reply_to: null,
             media,
+            mood,
         }
         setLocalPosts(prev => [newPost, ...prev])
         setBreezesCount(prev => prev + 1)

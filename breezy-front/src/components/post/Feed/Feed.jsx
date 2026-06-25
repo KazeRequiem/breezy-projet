@@ -73,12 +73,12 @@ function Feed() {
         }
     }, [posts, fetchPage])
 
-    const handlePublish = async (content, media = null) => {
+    const handlePublish = async (content, media = null, mood = 'cloudy') => {
         if (!user) return
         const image_url = media?.type === 'image' ? media.base64 : null
         const video_url = media?.type === 'video' ? media.base64 : null
         try {
-            const created = await createMessage({ content, image_url, video_url, tags: parseHashtags(content) })
+            const created = await createMessage({ content, image_url, video_url, tags: parseHashtags(content), mood })
             const post = {
                 ...created,
                 author: { _id: user.id, username: user.username, profile_picture: user.profile_picture ?? null },

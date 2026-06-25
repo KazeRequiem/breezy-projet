@@ -8,6 +8,8 @@ import { deleteMessage, updateMessage, getReplies, createReply } from '../../../
 import { getLikeStatus, likePost, unlikePost } from '../../../services/likeService'
 import { reportMessage } from '../../../services/reportService'
 import { getWhispers, sendWhisper, deleteWhisper } from '../../../services/whisperService'
+import { MOODS, getMood } from '../../../utils/moods'
+import MoodPanel from '../../mood/MoodPanel/MoodPanel'
 import styles from './PostCard.module.css'
 
 import { formatRelativeTime } from '../../../utils/formatRelativeTime'
@@ -38,7 +40,10 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
         media: localMedia = null,
         image_url      = null,
         video_url      = null,
+        mood           = 'cloudy',
     } = post
+
+    const moodInfo = mood && mood !== 'cloudy' ? getMood(mood) : null
 
     const media = localMedia
         || (image_url ? { type: 'image', url: image_url } : null)
@@ -57,7 +62,9 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
     const [showWhisper, setShowWhisper] = useState(false)
     const [whisperText, setWhisperText] = useState('')
     const [whisperStatus, setWhisperStatus] = useState('idle') // 'idle' | 'sending' | 'sent'
+    const [whisperMood, setWhisperMood] = useState('cloudy')
     const [whispers, setWhispers] = useState([])
+    const [showMoodPanel, setShowMoodPanel] = useState(false)
     const [toastMessage, setToastMessage] = useState('')
 
     // États Like et Commentaires
@@ -284,13 +291,14 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
 
         setWhisperStatus('sending')
         try {
-            const created = await sendWhisper(id_message, text)
+            const created = await sendWhisper(id_message, text, whisperMood)
             const w = {
                 ...created,
                 author: { _id: user?.id, username: currentLoggedUser || 'moi', profile_picture: user?.profile_picture ?? null },
             }
             setWhispers(prev => [...prev, w])
             setWhisperText('')
+            setWhisperMood('cloudy')
             setWhisperStatus('sent')
             setTimeout(() => setWhisperStatus('idle'), 1200)
             showToast('Votre murmure a été soufflé à l\'auteur ! 🍃')
@@ -490,6 +498,25 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                             </Link>
                         </span>
                     </div>
+                )}
+
+                {/* Vignette d'humeur (mood) — cliquable pour ouvrir l'explication */}
+                {moodInfo && (
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowMoodPanel(true) }}
+                        title="Voir les humeurs Breezy"
+                        aria-label={`Humeur : ${moodInfo.label}. Voir les humeurs`}
+                        style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10,
+                            padding: '4px 10px', borderRadius: 999, cursor: 'pointer',
+                            border: '1px solid rgba(120,100,160,0.2)', background: 'rgba(59,140,240,0.08)',
+                            color: 'var(--text-secondary,#5a5a7a)', fontSize: '0.82rem', fontWeight: 600,
+                        }}
+                    >
+                        <span aria-hidden="true" style={{ fontSize: '1rem' }}>{moodInfo.emoji}</span>
+                        <span>@{author.username} {moodInfo.phrase}</span>
+                    </button>
                 )}
 
                 {/* Contenu (max 280 chars selon BDD) */}
@@ -694,7 +721,10 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                 {whispers.map(w => (
                                     <div key={w._id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: 'rgba(0,0,0,0.04)', borderRadius: 10, padding: '8px 10px' }}>
                                         <div style={{ flex: 1 }}>
-                                            <span style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--brand,#3b8cf0)' }}>@{w.author?.username || 'moi'}</span>
+                                            <span style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--brand,#3b8cf0)' }}>
+                                                @{w.author?.username || 'moi'}
+                                                {w.mood && w.mood !== 'cloudy' && <span title={getMood(w.mood).label} style={{ marginLeft: 5 }}>{getMood(w.mood).emoji}</span>}
+                                            </span>
                                             <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: 'var(--text-primary,#1a1a2e)' }}>{w.content}</p>
                                         </div>
                                         {String(w.author?._id) === String(user?.id) && (
@@ -718,7 +748,26 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                                 disabled={whisperStatus !== 'idle'}
                                 autoFocus
                             />
-                            
+
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '6px 0' }}>
+                                <label htmlFor={`whisper-mood-${id_message}`} style={{ fontSize: '0.78rem', color: 'var(--text-secondary,#5a5a7a)' }}>Humeur :</label>
+                                <select
+                                    id={`whisper-mood-${id_message}`}
+                                    value={whisperMood}
+                                    onChange={(e) => setWhisperMood(e.target.value)}
+                                    disabled={whisperStatus !== 'idle'}
+                                    style={{
+                                        flex: 1, padding: '7px 9px', borderRadius: 8,
+                                        border: '1px solid rgba(120,100,160,0.25)', background: 'rgba(255,255,255,0.8)',
+                                        fontFamily: 'inherit', fontSize: '0.85rem', color: 'var(--text-primary,#1a1a2e)', cursor: 'pointer',
+                                    }}
+                                >
+                                    {MOODS.map(m => (
+                                        <option key={m.id} value={m.id}>{m.emoji}  {m.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className={styles.formFooter}>
                                 <span className={styles.charCounter}>{whisperText.length}/140</span>
                                 <button
@@ -750,6 +799,9 @@ function PostCard({ post, threadVariant, animDelay = '', compact = false, replie
                     {toastMessage}
                 </div>
             )}
+
+            {/* Panneau explicatif des humeurs */}
+            <MoodPanel isOpen={showMoodPanel} onClose={() => setShowMoodPanel(false)} />
         </>
     )
 }

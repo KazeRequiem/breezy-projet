@@ -55,7 +55,7 @@ function BottomNav() {
                 if (cancelled || !Array.isArray(list)) return
                 setUnreadNotifs(list.filter(n => !n.read).length)
             })
-            .catch(() => {})
+            .catch(() => { })
         return () => { cancelled = true }
     }, [])
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
@@ -206,7 +206,7 @@ function BottomNav() {
                         <input
                             id="search-desktop"
                             type="text"
-                            placeholder="Rechercher (@pseudo ou #tag)…"
+                            placeholder="Rechercher…"
                             aria-label="Champ de recherche"
                             value={searchQuery}
                             onChange={handleSearchChange}
